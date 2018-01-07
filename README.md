@@ -24,11 +24,9 @@ Example Usage:
 
 
 >>> foo.get_daily_kWh()
-
 u'Your average daily usage is 79.4 kWh.'
 
 >>> foo.get_discovered_device_names()
-
 [u'Gameroom Heat', u'Always On', u'Fridge', u'Other']
 
 >>> pprint.pprint(foo.get_monitor_info())
