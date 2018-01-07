@@ -14,7 +14,7 @@ Notes:
 
 
 Example Usage:
-
+```
 >> from sense_api import sensenable as s
 
 >>> foo = s()
@@ -22,10 +22,13 @@ Example Usage:
 >>> dir(foo)
 ['__doc__', '__init__', '__module__', 'always_on_info', 'get_all_usage_data', 'get_daily_kWh', 'get_device_info', 'get_discovered_device_data', 'get_discovered_device_names', 'get_monitor_info', 'get_notification_preferences', 'get_usage', 'headers', 's', 'sense_monitor_id', 'sense_user_id']
 
+
 >>> foo.get_daily_kWh()
+
 u'Your average daily usage is 79.4 kWh.'
 
 >>> foo.get_discovered_device_names()
+
 [u'Gameroom Heat', u'Always On', u'Fridge', u'Other']
 
 >>> pprint.pprint(foo.get_monitor_info())
@@ -47,3 +50,4 @@ u'Your average daily usage is 79.4 kWh.'
                    u'ssid': u'xxxxx',
                    u'version': u'1.8.1661-bc40c79-master'},
  u'signals': {u'progress': 100, u'status': u'OK'}}
+```
