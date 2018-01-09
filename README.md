@@ -7,45 +7,54 @@ to be used in other tools - Smartthings, ActiveTiles, etc.
 Python version based on the work done here in Powershell:
 https://gist.github.com/mbrownnycnyc/db3209a1045746f5e287ea6b6631e19c
 
-Notes:
+
+## Notes:
 
 - Main focus on GET requests. POST/PUT still be worked on
 - I figured out endpoints using Chrome developer tools while browsing the the Sense web page
 
 
-Example Usage:
+## Example Usage:
 ```
->> from sense_api import sensenable as s
+(.venv_1)  ~/code/sense   stable > python sense_api.py
+Please enter you Sense username (email address): blah@blah.com
+Please enter your Sense password:
+Active: 2846.24267578 W
+Active Solar: No Solar Found W
+Active Devices: Other, Always On, Fridge
+```
 
->>> foo = s()
+There are plenty of methods for you to call so modify however you see fit
 
->>> dir(foo)
-['__doc__', '__init__', '__module__', 'always_on_info', 'get_all_usage_data', 'get_daily_kWh', 'get_device_info', 'get_discovered_device_data', 'get_discovered_device_names', 'get_monitor_info', 'get_notification_preferences', 'get_usage', 'headers', 's', 'sense_monitor_id', 'sense_user_id']
+```
+>> sense = s('your_username_here', 'your_password_here')
 
+>>> dir(sense)
+['__doc__', '__init__', '__module__', '_realtime', 'active_devices', 'active_power', 'active_solar_power', 'always_on_info', 'devices', 'get_all_usage_data', 'get_device_info', 'get_discovered_device_data', 'get_discovered_device_names', 'get_monitor_info', 'get_notification_preferences', 'get_realtime', 'headers', 's', 'sense_access_token', 'sense_monitor_id', 'sense_user_id']
 
->>> foo.get_daily_kWh()
-u'Your average daily usage is 79.4 kWh.'
+>>> sense.active_power
+2734.8173828125
 
->>> foo.get_discovered_device_names()
-[u'Gameroom Heat', u'Always On', u'Fridge', u'Other']
+>>> sense.sense_monitor_id
+24752
 
->>> pprint.pprint(foo.get_monitor_info())
-{u'device_detection': {u'found': [{u'icon': u'fridge',
-                                   u'name': u'Fridge',
-                                   u'progress': 73}],
+>>> pprint.pprint(sense.get_monitor_info())
+{u'device_detection': {u'found': [],
                        u'in_progress': [{u'icon': u'washer',
                                          u'name': u'Possible Dryer',
                                          u'progress': 8},
                                         {u'icon': u'stove',
                                          u'name': u'Possible Stove',
-                                         u'progress': 5}],
+                                         u'progress': 5},
+                                        {u'icon': u'heater',
+                                         u'name': u'Possible Water heater',
+                                         u'progress': 12}],
                        u'num_detected': 2},
- u'monitor_info': {u'mac': u'xx.xx.xx.xx',
+ u'monitor_info': {u'mac': u'xxxxxxx',
                    u'ndt_enabled': True,
                    u'online': True,
                    u'serial': u'xxxxxxx',
-                   u'signal': u'-31 dBm',
-                   u'ssid': u'xxxxx',
+                   u'signal': u'-33 dBm',
+                   u'ssid': u'11',
                    u'version': u'1.8.1661-bc40c79-master'},
  u'signals': {u'progress': 100, u'status': u'OK'}}
-```
