@@ -8,13 +8,22 @@ Python version based on the work done here in Powershell:
 https://gist.github.com/mbrownnycnyc/db3209a1045746f5e287ea6b6631e19c
 
 
-## Notes:
+### Todo
 
-- Main focus on GET requests. POST/PUT still be worked on
-- I figured out endpoints using Chrome developer tools while browsing the the Sense web page
+- Add POST/PUT where/if applicable
+- CLI
+- Improved error handling
+- 
 
+### Install
 
-## Example Usage:
+Python 2.7 with the following dependencies
+```
+pip install requests
+pip install websocket-client
+```
+
+### Example Usage:
 ```
 (.venv_1)  ~/code/sense   stable > python sense_api.py
 Please enter you Sense username (email address): blah@blah.com
