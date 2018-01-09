@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # collect authn data
     username = raw_input("Please enter you Sense username (email address): ")
     password = getpass.getpass("Please enter your Sense password: ")
-    sense = Sensenable(username, password)
+    sense = Senseable(username, password)
     print "Active:",sense.active_power,"W"
     print "Active Solar:",sense.active_solar_power,"W"
     print "Active Devices:",", ".join(sense.active_devices),
