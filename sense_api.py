@@ -40,32 +40,6 @@ class Senseable():
         """Return devices."""
         return self._devices
     
-    def get_usage(s, sense_monitor_id, start ,granularity): # NOT WORKING
-
-        valid_granularity = [
-            'second',
-            'minute',
-            'hour',
-            'day',
-            'week',
-            'month',
-            'year']
-
-        # check for UTC format
-        valid_start = "2018-01-01T00:00:00.000Z"
-
-        valid_frames = 5400 #number of data samples you will retrive. the android client default is 5400
-
-        payload = {
-            'monitor_id': sense_monitor_id,
-            'granularity': 'MINUTE',
-            'start': valid_start,
-            'frames': valid_frames
-            }
-        print payload
-        #response = s.get('https://api.sense.com/apiservice/api/v1/app/history/usage?monitor_id=%s&granularity=$%s&start=%s&frames=%s' % (sense_monitor_id, 'MINUTE', valid_start, valid_frames), headers=headers)
-        response = s.get(API_URL+'app/history/usage', headers=headers, data=payload)
-        return response
 
     def get_realtime(self):
         ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" % (self.sense_monitor_id,  self.sense_access_token))
@@ -83,7 +57,7 @@ class Senseable():
     @property
     def active_solar_power(self):
         if not self._realtime: self.get_realtime()
-        return self._realtime['solar_w']
+        return self._realtime.get('solar_w', 'No Solar Found')
     
     @property
     def active_devices(self):
@@ -127,12 +101,6 @@ class Senseable():
         return response.json()
 
 
-    def get_daily_kWh(self):
-        payload = {'n_items': 30}
-        response = self.s.get(API_URL+'users/%s/timeline' % self.sense_user_id, headers=self.headers, data=payload)
-        return response.json()['items'][1]['body']
-
-
     def get_all_usage_data(self):
         payload = {'n_items': 30}
         # lots of info in here to be parsed out
@@ -146,10 +114,8 @@ if __name__ == "__main__":
     # collect authn data
     username = raw_input("Please enter you Sense username (email address): ")
     password = getpass.getpass("Please enter your Sense password: ")
-    sense = Sensenable(username, password)
+    sense = Senseable(username, password)
     print "Active:",sense.active_power,"W"
     print "Active Solar:",sense.active_solar_power,"W"
-    print "Active Devices:",", ".join(sense.active_devices),
-    #pprint.pprint(foo.get_daily_kWh())
-
+    print "Active Devices:",", ".join(sense.active_devices)
 
