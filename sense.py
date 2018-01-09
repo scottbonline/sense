@@ -53,7 +53,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     @Throttle(MIN_TIME_BETWEEN_DAILY_UPDATES)
     def update_daily():
         """Update the daily power usage."""
-        data.get_daily_kWh()
+        data.get_daily_usage()
 
     @Throttle(MIN_TIME_BETWEEN_ACTIVE_UPDATES)
     def update_active():
@@ -82,7 +82,6 @@ class Sense(Entity):
         self._sensor_type = sensor_type
         self.update_sensor = update_call
         self._state = None
-        self._watts = 0
 
         if sensor_type == ACTIVE_TYPE or sensor_type == ACTIVE_SOLAR_TYPE:
             self._unit_of_measurement = 'W'
@@ -114,11 +113,9 @@ class Sense(Entity):
         self.update_sensor()
 
         if self._sensor_type == ACTIVE_TYPE:
-            self._watts = self._data.active_power
+            self._state = round(self._data.active_power)
         elif self._sensor_type == ACTIVE_SOLAR_TYPE:
-            self._watts = self._data.active_solar_power
+            self._state = round(self._data.active_solar_power)
         elif self._sensor_type == DAILY_TYPE:
-            self._watts = self._data.get_daily_kWh
-
-        self._state = round(self._watts)
+            self._state = round(self._data.get_daily_usage(),1)
 
