@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-  name = 'sense-energy',
-  packages = ['sense-energy'], 
+  name = 'sense_energy_api',
+  packages = ['sense_energy_api'], 
   install_requires=[
       'requests',
       'websocket-client',
