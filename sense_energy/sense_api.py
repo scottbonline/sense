@@ -7,6 +7,9 @@ API_URL = 'https://api.sense.com/apiservice/api/v1/'
 API_TIMEOUT = 1
 WSS_TIMEOUT = 1
 
+# for the last hour, day, week, month, or year
+valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
+
 class Senseable(object):
 
     def __init__(self, username, password):
@@ -19,6 +22,8 @@ class Senseable(object):
         self.s = requests.session()
         self._realtime = None
         self._devices = []
+        self._trend_data = {}
+        for scale in valid_scales: self._trend_data[scale] = {}
 
         # Get auth token
         try:
@@ -63,6 +68,34 @@ class Senseable(object):
     def active_solar_power(self):
         if not self._realtime: self.get_realtime()
         return self._realtime.get('solar_w', 0)
+    
+    @property
+    def daily_usage(self):
+        if not self._trend_data['DAY']: self.get_trend_data('DAY')         
+        if "consumption" not in self._trend_data['DAY']: return 0
+        return self._trend_data['DAY']['consumption'].get('total', 0)
+
+    @property
+    def daily_production(self):
+        if not self._trend_data['DAY']: self.get_trend_data('DAY')         
+        if "production" not in self._trend_data['DAY']: return 0
+        return self._trend_data['DAY']['production'].get('total', 0)
+    
+    @property
+    def weekly_usage(self):
+        if not self._trend_data['WEEK']: self.get_trend_data('WEEK')         
+        if "consumption" not in self._trend_data['WEEK']: return 0
+        usage = self._trend_data['WEEK']['consumption'].get('total', 0)
+        # Add today's usage
+        return usage + self.daily_usage
+
+    @property
+    def weekly_production(self):
+        if not self._trend_data['WEEK']: self.get_trend_data('WEEK')            
+        if "production" not in self._trend_data['WEEK']: return 0
+        production = self._trend_data['WEEK']['production'].get('total', 0)
+        # Add today's production
+        return production + self.daily_production
 
     @property
     def active_devices(self):
@@ -112,14 +145,18 @@ class Senseable(object):
                               headers=self.headers, timeout=API_TIMEOUT,
                               data=payload)
         return response.json()
-
-    def get_daily_usage(self):
-        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=DAY&start=%s' %
-                              (self.sense_monitor_id, datetime.now().isoformat()),
+    
+    def get_trend_data(self, scale):
+        if scale.upper() not in valid_scales:
+            raise Exception("%s not a valid scale" % scale)
+        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
+                              (self.sense_monitor_id, scale, datetime.now().isoformat()),
                               headers=self.headers, timeout=API_TIMEOUT)
-        data = response.json()
-        if "consumption" not in data or "total" not in data['consumption']: return 0
-        return data['consumption']['total']
+        self._trend_data[scale] = response.json()
+
+    def get_all_trend_data(self):
+        for scale in valid_scales:
+            self.get_trend_data(scale)
 
     def get_all_usage_data(self):
         payload = {'n_items': 30}
