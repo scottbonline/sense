@@ -71,36 +71,52 @@ class Senseable(object):
     
     @property
     def daily_usage(self):
-        if not self._trend_data['DAY']: self.get_trend_data('DAY')         
-        if "consumption" not in self._trend_data['DAY']: return 0
-        return self._trend_data['DAY']['consumption'].get('total', 0)
+        return get_trend('DAY', 'consumption')
 
     @property
     def daily_production(self):
-        if not self._trend_data['DAY']: self.get_trend_data('DAY')         
-        if "production" not in self._trend_data['DAY']: return 0
-        return self._trend_data['DAY']['production'].get('total', 0)
+        return get_trend('DAY', 'production')
     
     @property
     def weekly_usage(self):
-        if not self._trend_data['WEEK']: self.get_trend_data('WEEK')         
-        if "consumption" not in self._trend_data['WEEK']: return 0
-        usage = self._trend_data['WEEK']['consumption'].get('total', 0)
         # Add today's usage
-        return usage + self.daily_usage
+        return get_trend('WEEK', 'consumption') + self.daily_usage
 
     @property
     def weekly_production(self):
-        if not self._trend_data['WEEK']: self.get_trend_data('WEEK')            
-        if "production" not in self._trend_data['WEEK']: return 0
-        production = self._trend_data['WEEK']['production'].get('total', 0)
         # Add today's production
-        return production + self.daily_production
+        return get_trend('WEEK', 'production') + self.daily_production
+    
+    @property
+    def monthly_usage(self):
+        # Add today's usage
+        return get_trend('MONTH', 'consumption') + self.daily_usage
+
+    @property
+    def monthly_production(self):
+        # Add today's production
+        return get_trend('MONTH', 'production') + self.daily_production
+    
+    @property
+    def yearly_usage(self):
+        # Add this month's usage
+        return get_trend('YEAR', 'consumption') + self.monthly_usage
+
+    @property
+    def yeary_production(self):
+        # Add this month's production
+        return get_trend('YEAR', 'production') + self.monthly_production
 
     @property
     def active_devices(self):
         if not self._realtime: self.get_realtime()
         return [d['name'] for d in self._realtime.get('devices', {})]
+
+    def get_trend(self, scale, is_production):
+        key = "production" if is_production else "consumption"
+        if not self._trend_data[scale]: self.get_trend_data(scale)         
+        if key not in self._trend_data[scale]: return 0
+        return self._trend_data[scale][key].get('total', 0)
 
     def get_discovered_device_names(self):
         # lots more info in here to be parsed out
@@ -154,7 +170,7 @@ class Senseable(object):
                               headers=self.headers, timeout=API_TIMEOUT)
         self._trend_data[scale] = response.json()
 
-    def get_all_trend_data(self):
+    def update_trend_data(self):
         for scale in valid_scales:
             self.get_trend_data(scale)
 
