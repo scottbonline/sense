@@ -103,8 +103,12 @@ class Senseable(object):
                               data=payload)
         return response.json()
 
-    def get_daily_usage(self):
-        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=DAY&start=%s' % (self.sense_monitor_id, datetime.now().isoformat()), headers=self.headers)
+    def get_usage_totals(self, scale):
+        # for the last hour, day, week, month, or year
+        valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
+        if scale.upper() not in valid_scales:
+            raise Exception("%s not a valid scale" % scale)
+        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=%s&start=%s' % (self.sense_monitor_id, scale, datetime.now().isoformat()), headers=self.headers)
         data = response.json()
         if "consumption" not in data or "total" not in data['consumption']: return 0
         return data['consumption']['total']
