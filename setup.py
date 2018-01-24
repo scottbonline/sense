@@ -7,7 +7,7 @@ setup(
       'requests',
       'websocket-client',
   ],
-  version = '0.2.2',
+  version = '0.2.3',
   description = 'API for the Sense Energy Monitor',
   author = 'scottbonline',
   author_email = 'scottbonline@gmail.com',

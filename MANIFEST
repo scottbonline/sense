@@ -2,5 +2,5 @@
 README
 setup.cfg
 setup.py
-sense_energy_api/__init__.py
-sense_energy_api/sense_energy_api.py
+sense_energy/__init__.py
+sense_energy/sense_api.py
