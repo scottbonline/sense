@@ -22,7 +22,7 @@ class Senseable(object):
 
         # Get auth token
         try:
-            response = self.s.post('https://api.sense.com/apiservice/api/v1/authenticate', auth_data, timeout=API_TIMEOUT)
+            response = self.s.post(API_URL+'authenticate', auth_data, timeout=API_TIMEOUT)
         except Exception as e:
             raise Exception('Connection failure: %s' % e)
 
@@ -71,40 +71,52 @@ class Senseable(object):
 
     def get_discovered_device_names(self):
         # lots more info in here to be parsed out
-        response = self.s.get(API_URL + 'app/monitors/%s/devices' % self.sense_monitor_id, headers=self.headers)
+        response = self.s.get(API_URL + 'app/monitors/%s/devices' %
+                              self.sense_monitor_id,
+                              headers=self.headers, timeout=API_TIMEOUT)
         self._devices = [entry['name'] for entry in response.json()]
         return self._devices
 
     def get_discovered_device_data(self):
-        response = self.s.get(API_URL + 'monitors/%s/devices' % self.sense_monitor_id, headers=self.headers)
+        response = self.s.get(API_URL + 'monitors/%s/devices' %
+                              self.sense_monitor_id,
+                              headers=self.headers, timeout=API_TIMEOUT)
         return response.json()
 
     def always_on_info(self):
         # Always on info - pretty generic similar to the web page
-        response = self.s.get(API_URL + 'app/monitors/%s/devices/always_on' % self.sense_monitor_id,
-                              headers=self.headers)
+        response = self.s.get(API_URL + 'app/monitors/%s/devices/always_on' %
+                              self.sense_monitor_id,
+                              headers=self.headers, timeout=API_TIMEOUT)
         return response.json()
 
     def get_monitor_info(self):
         # View info on your monitor & device detection status
-        response = self.s.get(API_URL + 'app/monitors/%s/status' % self.sense_monitor_id, headers=self.headers)
+        response = self.s.get(API_URL + 'app/monitors/%s/status' %
+                              self.sense_monitor_id,
+                              headers=self.headers, timeout=API_TIMEOUT)
         return response.json()
 
     def get_device_info(self, device_id):
         # Get specific informaton about a device
-        response = self.s.get(API_URL + 'app/monitors/%s/devices/%s' % (self.sense_monitor_id, device_id),
-                              headers=self.headers)
+        response = self.s.get(API_URL + 'app/monitors/%s/devices/%s' %
+                              (self.sense_monitor_id, device_id),
+                              headers=self.headers, timeout=API_TIMEOUT)
         return response.json()
 
     def get_notification_preferences(self):
         # Get notification preferences
         payload = {'monitor_id': '%s' % self.sense_monitor_id}
-        response = self.s.get(API_URL + 'users/%s/notifications' % self.sense_user_id, headers=self.headers,
+        response = self.s.get(API_URL + 'users/%s/notifications' %
+                              self.sense_user_id,
+                              headers=self.headers, timeout=API_TIMEOUT,
                               data=payload)
         return response.json()
 
     def get_daily_usage(self):
-        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=DAY&start=%s' % (self.sense_monitor_id, datetime.now().isoformat()), headers=self.headers)
+        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=DAY&start=%s' %
+                              (self.sense_monitor_id, datetime.now().isoformat()),
+                              headers=self.headers, timeout=API_TIMEOUT)
         data = response.json()
         if "consumption" not in data or "total" not in data['consumption']: return 0
         return data['consumption']['total']
@@ -112,7 +124,10 @@ class Senseable(object):
     def get_all_usage_data(self):
         payload = {'n_items': 30}
         # lots of info in here to be parsed out
-        response = self.s.get(API_URL + 'users/%s/timeline' % self.sense_user_id, headers=self.headers, data=payload)
+        response = self.s.get(API_URL + 'users/%s/timeline' %
+                              self.sense_user_id,
+                              headers=self.headers, timeout=API_TIMEOUT,
+                              data=payload)
         return response.json()
 
 
