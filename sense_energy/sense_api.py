@@ -4,7 +4,8 @@ from datetime import datetime
 from websocket import create_connection
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
-
+API_TIMEOUT = 1
+WSS_TIMEOUT = 1
 
 class Senseable(object):
 
@@ -21,7 +22,7 @@ class Senseable(object):
 
         # Get auth token
         try:
-            response = self.s.post('https://api.sense.com/apiservice/api/v1/authenticate', auth_data, timeout=1)
+            response = self.s.post('https://api.sense.com/apiservice/api/v1/authenticate', auth_data, timeout=API_TIMEOUT)
         except Exception as e:
             raise Exception('Connection failure: %s' % e)
 
@@ -45,7 +46,7 @@ class Senseable(object):
     def get_realtime(self):
         ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
                                (self.sense_monitor_id, self.sense_access_token),
-                               timeout=1)
+                               timeout=WSS_TIMEOUT)
 
         while True:
             result = json.loads(ws.recv())
