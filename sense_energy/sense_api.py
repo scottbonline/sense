@@ -71,41 +71,41 @@ class Senseable(object):
     
     @property
     def daily_usage(self):
-        return self.get_trend('DAY', 'consumption')
+        return self.get_trend('DAY', False)
 
     @property
     def daily_production(self):
-        return self.get_trend('DAY', 'production')
+        return self.get_trend('DAY', True)
     
     @property
     def weekly_usage(self):
         # Add today's usage
-        return self.get_trend('WEEK', 'consumption') + self.daily_usage
+        return self.get_trend('WEEK', False)
 
     @property
     def weekly_production(self):
         # Add today's production
-        return self.get_trend('WEEK', 'production') + self.daily_production
+        return self.get_trend('WEEK', True)
     
     @property
     def monthly_usage(self):
         # Add today's usage
-        return self.get_trend('MONTH', 'consumption') + self.daily_usage
+        return self.get_trend('MONTH', False)
 
     @property
     def monthly_production(self):
         # Add today's production
-        return self.get_trend('MONTH', 'production') + self.daily_production
+        return self.get_trend('MONTH', True)
     
     @property
     def yearly_usage(self):
         # Add this month's usage
-        return self.get_trend('YEAR', 'consumption') + self.monthly_usage
+        return self.get_trend('YEAR', False)
 
     @property
     def yeary_production(self):
         # Add this month's production
-        return self.get_trend('YEAR', 'production') + self.monthly_production
+        return self.get_trend('YEAR', True)
 
     @property
     def active_devices(self):
@@ -116,7 +116,12 @@ class Senseable(object):
         key = "production" if is_production else "consumption"
         if not self._trend_data[scale]: self.get_trend_data(scale)         
         if key not in self._trend_data[scale]: return 0
-        return self._trend_data[scale][key].get('total', 0)
+        total = self._trend_data[scale][key].get('total', 0)
+        if scale == 'WEEK' or scale == 'MONTH':
+            return total + self.self.get_trend('DAY', is_production)
+        if scale == 'YEAR':
+            return total + self.self.get_trend('MONTH', is_production)
+        return total
 
     def get_discovered_device_names(self):
         # lots more info in here to be parsed out
