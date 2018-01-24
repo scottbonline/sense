@@ -53,7 +53,7 @@ class Senseable(object):
                                (self.sense_monitor_id, self.sense_access_token),
                                timeout=WSS_TIMEOUT)
 
-        while True:
+        for i in range(3): # hello, features, data
             result = json.loads(ws.recv())
             if 'payload' in result and not 'features' in result['payload']:
                 self._realtime = result['payload']
@@ -71,41 +71,41 @@ class Senseable(object):
     
     @property
     def daily_usage(self):
-        return get_trend('DAY', 'consumption')
+        return self.get_trend('DAY', 'consumption')
 
     @property
     def daily_production(self):
-        return get_trend('DAY', 'production')
+        return self.get_trend('DAY', 'production')
     
     @property
     def weekly_usage(self):
         # Add today's usage
-        return get_trend('WEEK', 'consumption') + self.daily_usage
+        return self.get_trend('WEEK', 'consumption') + self.daily_usage
 
     @property
     def weekly_production(self):
         # Add today's production
-        return get_trend('WEEK', 'production') + self.daily_production
+        return self.get_trend('WEEK', 'production') + self.daily_production
     
     @property
     def monthly_usage(self):
         # Add today's usage
-        return get_trend('MONTH', 'consumption') + self.daily_usage
+        return self.get_trend('MONTH', 'consumption') + self.daily_usage
 
     @property
     def monthly_production(self):
         # Add today's production
-        return get_trend('MONTH', 'production') + self.daily_production
+        return self.get_trend('MONTH', 'production') + self.daily_production
     
     @property
     def yearly_usage(self):
         # Add this month's usage
-        return get_trend('YEAR', 'consumption') + self.monthly_usage
+        return self.get_trend('YEAR', 'consumption') + self.monthly_usage
 
     @property
     def yeary_production(self):
         # Add this month's production
-        return get_trend('YEAR', 'production') + self.monthly_production
+        return self.get_trend('YEAR', 'production') + self.monthly_production
 
     @property
     def active_devices(self):
