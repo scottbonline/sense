@@ -118,9 +118,9 @@ class Senseable(object):
         if key not in self._trend_data[scale]: return 0
         total = self._trend_data[scale][key].get('total', 0)
         if scale == 'WEEK' or scale == 'MONTH':
-            return total + self.self.get_trend('DAY', is_production)
+            return total + self.get_trend('DAY', is_production)
         if scale == 'YEAR':
-            return total + self.self.get_trend('MONTH', is_production)
+            return total + self.get_trend('MONTH', is_production)
         return total
 
     def get_discovered_device_names(self):
