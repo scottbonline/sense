@@ -21,7 +21,7 @@ class Senseable(object):
 
         # Get auth token
         try:
-            response = self.s.post('https://api.sense.com/apiservice/api/v1/authenticate', auth_data)
+            response = self.s.post('https://api.sense.com/apiservice/api/v1/authenticate', auth_data, timeout=1)
         except Exception as e:
             raise Exception('Connection failure: %s' % e)
 
@@ -43,7 +43,10 @@ class Senseable(object):
         return self._devices
 
     def get_realtime(self):
-        ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" % (self.sense_monitor_id, self.sense_access_token))
+        ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
+                               (self.sense_monitor_id, self.sense_access_token),
+                               timeout=1)
+
         while True:
             result = json.loads(ws.recv())
             if 'payload' in result and not 'features' in result['payload']:
@@ -53,7 +56,7 @@ class Senseable(object):
     @property
     def active_power(self):
         if not self._realtime: self.get_realtime()
-        return self._realtime['w']
+        return self._realtime.get('w', 0)
 
     @property
     def active_solar_power(self):
@@ -63,7 +66,7 @@ class Senseable(object):
     @property
     def active_devices(self):
         if not self._realtime: self.get_realtime()
-        return [d['name'] for d in self._realtime['devices']]
+        return [d['name'] for d in self._realtime.get('devices', {})]
 
     def get_discovered_device_names(self):
         # lots more info in here to be parsed out
