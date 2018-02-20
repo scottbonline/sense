@@ -37,5 +37,3 @@ Please enter your Sense password:
 ```
 
 There are plenty of methods for you to call so modify however you see fit
-
-```
