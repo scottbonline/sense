@@ -52,10 +52,9 @@ class Senseable(object):
         ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
                                (self.sense_monitor_id, self.sense_access_token),
                                timeout=WSS_TIMEOUT)
-
-        for i in range(3): # hello, features, data
+        for i in range(5): # hello, features, [updates,] data
             result = json.loads(ws.recv())
-            if 'payload' in result and not 'features' in result['payload']:
+            if result.get('type') == 'realtime_update':
                 self._realtime = result['payload']
                 return self._realtime
 
