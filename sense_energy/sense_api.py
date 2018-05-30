@@ -169,8 +169,9 @@ class Senseable(object):
     def get_trend_data(self, scale):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
+        t = datetime.now().replace(hour=12)
         response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
-                              (self.sense_monitor_id, scale, datetime.now().isoformat()),
+                              (self.sense_monitor_id, scale, t.isoformat()),
                               headers=self.headers, timeout=API_TIMEOUT)
         self._trend_data[scale] = response.json()
 
