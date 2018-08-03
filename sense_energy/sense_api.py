@@ -16,8 +16,7 @@ class Senseable(object):
         auth_data = {
             "email": username,
             "password": password
-        }
-
+            }
         # Create session
         self.s = requests.session()
         self._realtime = None
@@ -67,7 +66,12 @@ class Senseable(object):
     def active_solar_power(self):
         if not self._realtime: self.get_realtime()
         return self._realtime.get('solar_w', 0)
-    
+
+    @property
+    def active_voltage(self):
+        if not self._realtime: self.get_realtime()
+        return self._realtime.get('voltage', 0)
+    		
     @property
     def daily_usage(self):
         return self.get_trend('DAY', False)
@@ -169,9 +173,8 @@ class Senseable(object):
     def get_trend_data(self, scale):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
-        t = datetime.now().replace(hour=12)
         response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
-                              (self.sense_monitor_id, scale, t.isoformat()),
+                              (self.sense_monitor_id, scale, datetime.now().isoformat()),
                               headers=self.headers, timeout=API_TIMEOUT)
         self._trend_data[scale] = response.json()
 
@@ -200,3 +203,4 @@ if __name__ == "__main__":
     print ("Active:", sense.active_power, "W")
     print ("Active Solar:", sense.active_solar_power, "W")
     print ("Active Devices:", ", ".join(sense.active_devices))
+    print ("Active Voltage:", sense.active_voltage, "V")
