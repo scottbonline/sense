@@ -67,6 +67,16 @@ class Senseable(object):
     def active_solar_power(self):
         if not self._realtime: self.get_realtime()
         return self._realtime.get('solar_w', 0)
+
+    @property
+    def active_voltage(self):
+        if not self._realtime: self.get_realtime()
+        return self._realtime.get('voltage', 0)
+    
+   @property
+   def active_frequency(self):
+        if not self._realtime: self.get_realtime()
+        return self._realtime.get('hz', 0)
     
     @property
     def daily_usage(self):
@@ -200,3 +210,5 @@ if __name__ == "__main__":
     print ("Active:", sense.active_power, "W")
     print ("Active Solar:", sense.active_solar_power, "W")
     print ("Active Devices:", ", ".join(sense.active_devices))
+    print ("Active Voltage:", sense.active_voltage, "V")
+    print ("Active Frequency:", sense.active_frequency, "Hz")
