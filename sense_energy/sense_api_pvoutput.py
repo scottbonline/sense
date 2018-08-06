@@ -3,7 +3,7 @@ import json
 import requests
 from datetime import datetime, date, time
 from websocket import create_connection
-from weather import min_temp, max_temp, forecast_text
+from weather import current_temp, min_temp, max_temp, forecast_text
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
 API_TIMEOUT = 1
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     active_solar_power = str(sense.active_solar_power).split('.')[0]
     active_voltage_split = str(sense.active_voltage).split('.')[0]
     active_voltage_strip = str(active_voltage_split).strip('[ ,')
-    active_voltage = active_voltage_strip
+    active_voltage = active_voltage_strip[:5]
 
     print ("Active:", sense.active_power, "W")
     print ("Active Solar:", sense.active_solar_power, "W")
@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
 # ---------------- pvoutput
 
-PVOutputCURL1 = """curl -d "d={}" -d "t={}" -d "v4={}" -d "v2={}" -d "v5={}" -d "v6={}" """.format(date, time, active_power, active_solar_power, max_temp, active_voltage)
+PVOutputCURL1 = """curl -d "d={}" -d "t={}" -d "v4={}" -d "v2={}" -d "v5={}" -d "v6={}" """.format(date, time, active_power, active_solar_power, current_temp, active_voltage)
 PVOutputCURL2 = """-H "X-Pvoutput-APIkey:{}" -H "X-Pvoutput-SystemId:{}" {}""".format(PVOutputAPI, PVOutputSID, PVOutputURL)
 
 PVOutputCURL = PVOutputCURL1+PVOutputCURL2
