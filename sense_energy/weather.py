@@ -5,6 +5,7 @@ import feedparser
 #Set Variables to ensure we start fresh
 min_temp = ''
 max_temp = ''
+current_temp = ''
 
 #OpenweatherMap Settings
 owm_api = '' #http://openweathermap.org/appid#get
@@ -17,5 +18,5 @@ weatherURL = feedparser.parse ('http://api.openweathermap.org/data/2.5/weather?i
 #Get Yahoo Weather Code, min temp, max temp and weather text summary
 min_temp = weatherURL.feed.temperature.get('min')
 max_temp = weatherURL.feed.temperature.get('max')
+current_temp = weatherURL.feed.temperature.get('value')
 forecast_text = weatherURL.feed.weather.get('value')
-
