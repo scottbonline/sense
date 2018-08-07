@@ -73,8 +73,8 @@ class Senseable(object):
         if not self._realtime: self.get_realtime()
         return self._realtime.get('voltage', 0)
     
-   @property
-   def active_frequency(self):
+    @property
+    def active_frequency(self):
         if not self._realtime: self.get_realtime()
         return self._realtime.get('hz', 0)
     
