@@ -9,7 +9,7 @@ current_temp = ''
 
 #OpenweatherMap Settings
 owm_api = '' #http://openweathermap.org/appid#get
-owm_cityid = '' #Search for city ID here: http://openweathermap.org/help/city_list.txt. ID is the first column
+owm_cityid = '' #Search for city ID here: https://openweathermap.org/find?q= ID in the URL for the city you searched.. I.E. Los Angeles is 5368361
 owm_unit = 'metric' #metric or imperial
 
 #Open Weather Map API URL
