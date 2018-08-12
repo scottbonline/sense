@@ -4,14 +4,18 @@ from datetime import datetime
 from websocket import create_connection
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
+API_TIMEOUT = 5
+WSS_TIMEOUT = 5
 
 # for the last hour, day, week, month, or year
 valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
 
+class SenseAPITimeoutException(Exception):
+    pass
 
 class Senseable(object):
 
-    def __init__(self, username, password, api_timeout=1, wss_timeout=1):
+    def __init__(self, username, password, api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT):
         auth_data = {
             "email": username,
             "password": password
@@ -52,14 +56,27 @@ class Senseable(object):
         return self._devices
 
     def get_realtime(self):
-        ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
-                               (self.sense_monitor_id, self.sense_access_token),
-                               timeout=self.wss_timeout)
-        for i in range(5): # hello, features, [updates,] data
-            result = json.loads(ws.recv())
-            if result.get('type') == 'realtime_update':
-                self._realtime = result['payload']
-                return self._realtime
+        try:
+            ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
+                                   (self.sense_monitor_id, self.sense_access_token),
+                                   timeout=self.wss_timeout)
+            for i in range(5): # hello, features, [updates,] data
+                result = json.loads(ws.recv())
+                if result.get('type') == 'realtime_update':
+                    self._realtime = result['payload']
+                    return self._realtime
+        except WebSocketTimeoutException:
+            raise SenseAPITimeoutException("API websocket timed out")
+
+    def api_call(self, url, payload={}):
+        try:
+            return self.s.get(API_URL + url,
+                              headers=self.headers,
+                              timeout=self.api_timeout,
+                              data=payload)
+        except ReadTimeout:
+            raise SenseAPITimeoutException("API call timed out")
+        
 
     @property
     def active_power(self):
@@ -137,55 +154,47 @@ class Senseable(object):
 
     def get_discovered_device_names(self):
         # lots more info in here to be parsed out
-        response = self.s.get(API_URL + 'app/monitors/%s/devices' %
-                              self.sense_monitor_id,
-                              headers=self.headers, timeout=self.api_timeout)
+        response = self.api_call('app/monitors/%s/devices' %
+                                 self.sense_monitor_id)
         self._devices = [entry['name'] for entry in response.json()]
         return self._devices
 
     def get_discovered_device_data(self):
-        response = self.s.get(API_URL + 'monitors/%s/devices' %
-                              self.sense_monitor_id,
-                              headers=self.headers, timeout=self.api_timeout)
+        response = self.api_call('monitors/%s/devices' %
+                                 self.sense_monitor_id)
         return response.json()
 
     def always_on_info(self):
         # Always on info - pretty generic similar to the web page
-        response = self.s.get(API_URL + 'app/monitors/%s/devices/always_on' %
-                              self.sense_monitor_id,
-                              headers=self.headers, timeout=self.api_timeout)
+        response = self.api_call('app/monitors/%s/devices/always_on' %
+                                 self.sense_monitor_id)
         return response.json()
 
     def get_monitor_info(self):
         # View info on your monitor & device detection status
-        response = self.s.get(API_URL + 'app/monitors/%s/status' %
-                              self.sense_monitor_id,
-                              headers=self.headers, timeout=self.api_timeout)
+        response = self.api_call('app/monitors/%s/status' %
+                                 self.sense_monitor_id)
         return response.json()
 
     def get_device_info(self, device_id):
         # Get specific informaton about a device
-        response = self.s.get(API_URL + 'app/monitors/%s/devices/%s' %
-                              (self.sense_monitor_id, device_id),
-                              headers=self.headers, timeout=self.api_timeout)
+        response = self.api_call('app/monitors/%s/devices/%s' %
+                                 (self.sense_monitor_id, device_id))
         return response.json()
 
     def get_notification_preferences(self):
         # Get notification preferences
         payload = {'monitor_id': '%s' % self.sense_monitor_id}
-        response = self.s.get(API_URL + 'users/%s/notifications' %
-                              self.sense_user_id,
-                              headers=self.headers, timeout=self.api_timeout,
-                              data=payload)
+        response = self.api_call('users/%s/notifications' %
+                                 self.sense_user_id, payload)
         return response.json()
     
     def get_trend_data(self, scale):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
         t = datetime.now().replace(hour=12)
-        response = self.s.get(API_URL + 'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
-                              (self.sense_monitor_id, scale, t.isoformat()),
-                              headers=self.headers, timeout=self.api_timeout)
+        response = self.api_call('app/history/trends?monitor_id=%s&scale=%s&start=%s' %
+                                 (self.sense_monitor_id, scale, t.isoformat()))
         self._trend_data[scale] = response.json()
 
     def update_trend_data(self):
@@ -195,10 +204,8 @@ class Senseable(object):
     def get_all_usage_data(self):
         payload = {'n_items': 30}
         # lots of info in here to be parsed out
-        response = self.s.get(API_URL + 'users/%s/timeline' %
-                              self.sense_user_id,
-                              headers=self.headers, timeout=self.api_timeout,
-                              data=payload)
+        response = self.s.get('users/%s/timeline' %
+                              self.sense_user_id, payload)
         return response.json()
 
 
@@ -207,7 +214,7 @@ if __name__ == "__main__":
     import getpass
 
     # collect authn data
-    username = input("Please enter you Sense username (email address): ")
+    username = raw_input("Please enter you Sense username (email address): ")
     password = getpass.getpass("Please enter your Sense password: ")
     sense = Senseable(username, password)
     print ("Active:", sense.active_power, "W")
