@@ -37,3 +37,9 @@ Please enter your Sense password:
 ```
 
 There are plenty of methods for you to call so modify however you see fit
+
+If using the API to log data, you should only create one instance of Senseable and 
+then reuse that to get the updated stats.  Creating the instance authenticates 
+with the Sense API which should only be once every 15-20 minutes at most.  
+Calling the `update_trend_data()` function will update all the trend stats 
+and `get_realtime()` will retrieve the latest real time stats.
