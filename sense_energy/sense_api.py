@@ -2,6 +2,8 @@ import json
 import requests
 from datetime import datetime
 from websocket import create_connection
+from websocket._exceptions import WebSocketTimeoutException
+from requests.exceptions import ReadTimeout
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
 API_TIMEOUT = 5
@@ -67,6 +69,8 @@ class Senseable(object):
                     return self._realtime
         except WebSocketTimeoutException:
             raise SenseAPITimeoutException("API websocket timed out")
+        finally:
+            if ws: ws.close()
 
     def api_call(self, url, payload={}):
         try:
