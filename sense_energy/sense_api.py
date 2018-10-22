@@ -1,5 +1,6 @@
 import json
 import requests
+from time import time
 from datetime import datetime
 from websocket import create_connection
 from websocket._exceptions import WebSocketTimeoutException
@@ -8,11 +9,15 @@ from requests.exceptions import ReadTimeout
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
 API_TIMEOUT = 5
 WSS_TIMEOUT = 5
+RATE_LIMIT = 30
 
 # for the last hour, day, week, month, or year
 valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
 
 class SenseAPITimeoutException(Exception):
+    pass
+
+class SenseAuthenticationException(Exception):
     pass
 
 class Senseable(object):
@@ -33,6 +38,8 @@ class Senseable(object):
         self._devices = []
         self._trend_data = {}
         for scale in valid_scales: self._trend_data[scale] = {}
+        self.rate_limit = RATE_LIMIT
+        self.last_realtime_call = 0
 
         # Get auth token
         try:
@@ -42,7 +49,7 @@ class Senseable(object):
 
         # check for 200 return
         if response.status_code != 200:
-            raise Exception("Please check username and password. API Return Code: %s" % response.status_code)
+            raise SenseAuthenticationException("Please check username and password. API Return Code: %s" % response.status_code)
 
         # Build out some common variables
         self.sense_access_token = response.json()['access_token']
@@ -58,6 +65,10 @@ class Senseable(object):
         return self._devices
 
     def get_realtime(self):
+        # rate limit API calls
+        if self._realtime and self.rate_limit and \
+           self.last_realtime_call + self.rate_limit > time():
+            return self._realtime
         try:
             ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
                                    (self.sense_monitor_id, self.sense_access_token),
@@ -66,6 +77,7 @@ class Senseable(object):
                 result = json.loads(ws.recv())
                 if result.get('type') == 'realtime_update':
                     self._realtime = result['payload']
+                    self.last_realtime_call = time()
                     return self._realtime
         except WebSocketTimeoutException:
             raise SenseAPITimeoutException("API websocket timed out")
