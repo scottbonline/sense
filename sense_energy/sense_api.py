@@ -34,7 +34,7 @@ class Senseable(object):
 
         # Create session
         self.s = requests.session()
-        self._realtime = None
+        self._realtime = {}
         self._devices = []
         self._trend_data = {}
         for scale in valid_scales: self._trend_data[scale] = {}
