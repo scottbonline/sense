@@ -22,24 +22,28 @@ class SenseAuthenticationException(Exception):
 
 class Senseable(object):
 
-    def __init__(self, username, password, api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT):
+    def __init__(self, username=None, password=None, api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT):
+
+        # Timeout instance variables
+        self.api_timeout = api_timeout
+        self.wss_timeout = wss_timeout
+        
+        self._realtime = {}
+        self._devices = []
+        self._trend_data = {}        
+        for scale in valid_scales: self._trend_data[scale] = {}
+
+        if username and password:
+            self.authenticate(username, password)
+
+    def authenticate(self, username, password):
         auth_data = {
             "email": username,
             "password": password
         }
 
-        # Timeout instance variables
-        self.api_timeout = api_timeout
-        self.wss_timeout = wss_timeout
-
         # Create session
         self.s = requests.session()
-        self._realtime = {}
-        self._devices = []
-        self._trend_data = {}
-        for scale in valid_scales: self._trend_data[scale] = {}
-        self.rate_limit = RATE_LIMIT
-        self.last_realtime_call = 0
 
         # Get auth token
         try:
