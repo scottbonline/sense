@@ -7,6 +7,7 @@ from websocket._exceptions import WebSocketTimeoutException
 from requests.exceptions import ReadTimeout
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
+WS_URL = "wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s"
 API_TIMEOUT = 5
 WSS_TIMEOUT = 5
 RATE_LIMIT = 30
@@ -73,16 +74,21 @@ class Senseable(object):
         if self._realtime and self.rate_limit and \
            self.last_realtime_call + self.rate_limit > time():
             return self._realtime
+        return self.get_realtime_stream()
+            
+    def get_realtime_stream(self):
+        """ Reads realtime data from websocket
+            Continues until loop broken"""
         try:
-            ws = create_connection("wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s" %
-                                   (self.sense_monitor_id, self.sense_access_token),
+            ws = create_connection(WS_URL % (self.sense_monitor_id,
+                                             self.sense_access_token),
                                    timeout=self.wss_timeout)
-            for i in range(5): # hello, features, [updates,] data
+            while True: # hello, features, [updates,] data
                 result = json.loads(ws.recv())
                 if result.get('type') == 'realtime_update':
                     self._realtime = result['payload']
                     self.last_realtime_call = time()
-                    return self._realtime
+                    yield self._realtime
         except WebSocketTimeoutException:
             raise SenseAPITimeoutException("API websocket timed out")
         finally:
