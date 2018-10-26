@@ -74,7 +74,7 @@ class Senseable(object):
         if self._realtime and self.rate_limit and \
            self.last_realtime_call + self.rate_limit > time():
             return self._realtime
-        return self.get_realtime_stream()
+        return next(self.get_realtime_stream())
             
     def get_realtime_stream(self):
         """ Reads realtime data from websocket
