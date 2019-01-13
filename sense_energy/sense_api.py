@@ -79,6 +79,7 @@ class Senseable(object):
     def get_realtime_stream(self):
         """ Reads realtime data from websocket
             Continues until loop broken"""
+        ws = 0
         try:
             ws = create_connection(WS_URL % (self.sense_monitor_id,
                                              self.sense_access_token),
