@@ -9,6 +9,7 @@ setup(
     install_requires=[
         'requests',
         'websocket-client',
+        'websockets;python_version>="3.6"',
     ],
     version = '0.5.1',
     description = 'API for the Sense Energy Monitor',
