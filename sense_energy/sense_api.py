@@ -1,10 +1,16 @@
 import json
 import requests
+import sys
 from time import time
 from datetime import datetime
-from websocket import create_connection
-from websocket._exceptions import WebSocketTimeoutException
 from requests.exceptions import ReadTimeout
+
+from sense_exceptions import *
+import ws_sync
+if sys.version_info < (3, 6):
+    import ws_sync as websocket
+else:
+    import ws_async as websocket
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
 WS_URL = "wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s"
@@ -15,15 +21,11 @@ RATE_LIMIT = 30
 # for the last hour, day, week, month, or year
 valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
 
-class SenseAPITimeoutException(Exception):
-    pass
-
-class SenseAuthenticationException(Exception):
-    pass
 
 class Senseable(object):
 
-    def __init__(self, username=None, password=None, api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT):
+    def __init__(self, username=None, password=None,
+                 api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT):
 
         # Timeout instance variables
         self.api_timeout = api_timeout
@@ -48,13 +50,16 @@ class Senseable(object):
 
         # Get auth token
         try:
-            response = self.s.post(API_URL+'authenticate', auth_data, timeout=self.api_timeout)
+            response = self.s.post(API_URL+'authenticate',
+                                   auth_data, timeout=self.api_timeout)
         except Exception as e:
             raise Exception('Connection failure: %s' % e)
 
         # check for 200 return
         if response.status_code != 200:
-            raise SenseAuthenticationException("Please check username and password. API Return Code: %s" % response.status_code)
+            raise SenseAuthenticationException(
+                "Please check username and password. API Return Code: %s" %
+                response.status_code)
 
         # Build out some common variables
         self.sense_access_token = response.json()['access_token']
@@ -62,7 +67,8 @@ class Senseable(object):
         self.sense_monitor_id = response.json()['monitors'][0]['id']
 
         # create the auth header
-        self.headers = {'Authorization': 'bearer {}'.format(self.sense_access_token)}
+        self.headers = {'Authorization': 'bearer {}'.format(
+            self.sense_access_token)}
 
     @property
     def devices(self):
@@ -74,26 +80,27 @@ class Senseable(object):
         if self._realtime and self.rate_limit and \
            self.last_realtime_call + self.rate_limit > time():
             return self._realtime
-        return next(self.get_realtime_stream())
-            
+        url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
+        self._realtime = websocket.get_realtime(url, self.wss_timeout)
+        self.last_realtime_call = time()
+        return self._realtime
+    
     def get_realtime_stream(self):
         """ Reads realtime data from websocket
             Continues until loop broken"""
-        ws = 0
-        try:
-            ws = create_connection(WS_URL % (self.sense_monitor_id,
-                                             self.sense_access_token),
-                                   timeout=self.wss_timeout)
-            while True: # hello, features, [updates,] data
-                result = json.loads(ws.recv())
-                if result.get('type') == 'realtime_update':
-                    self._realtime = result['payload']
-                    self.last_realtime_call = time()
-                    yield self._realtime
-        except WebSocketTimeoutException:
-            raise SenseAPITimeoutException("API websocket timed out")
-        finally:
-            if ws: ws.close()
+        url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
+        stream = ws_sync.get_realtime_stream(url, self.wss_timeout)
+        while True:
+            self._realtime = next(stream)
+            yield self._realtime
+            
+    def get_realtime_future(self, callback):
+        """ Returns an async Future to parse realtime data with callback"""
+        def cb(data):
+            self._realtime = data
+            callback(data)
+        url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
+        return websocket.get_realtime_future(url, self.wss_timeout, cb)
 
     def api_call(self, url, payload={}):
         try:
@@ -102,8 +109,7 @@ class Senseable(object):
                               timeout=self.api_timeout,
                               data=payload)
         except ReadTimeout:
-            raise SenseAPITimeoutException("API call timed out")
-        
+            raise SenseAPITimeoutException("API call timed out")        
 
     @property
     def active_power(self):
@@ -220,8 +226,9 @@ class Senseable(object):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
         t = datetime.now().replace(hour=12)
-        response = self.api_call('app/history/trends?monitor_id=%s&scale=%s&start=%s' %
-                                 (self.sense_monitor_id, scale, t.isoformat()))
+        response = self.api_call(
+            'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
+            (self.sense_monitor_id, scale, t.isoformat()))
         self._trend_data[scale] = response.json()
 
     def update_trend_data(self):
