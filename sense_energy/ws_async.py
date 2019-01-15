@@ -1,7 +1,7 @@
 import asyncio
 import json
 import websockets
-from sense_exceptions import SenseAPITimeoutException
+from .sense_exceptions import SenseAPITimeoutException
 
 data = 0
 async def get_realtime_stream(url, callback):
@@ -10,7 +10,7 @@ async def get_realtime_stream(url, callback):
     # hello, features, [updates,] data
     async with websockets.connect(url) as ws:
         while True:
-            message = await asyncio.wait_for(ws.recv(), timeout)
+            message = await ws.recv()
             result = json.loads(message)
             if result.get('type') == 'realtime_update':
                 data = result['payload']
@@ -28,4 +28,4 @@ def get_realtime(url, timeout):
         raise SenseAPITimeoutException("API websocket timed out")
                 
 def get_realtime_future(url, timeout, callback):
-    return get_realtime_stream(url, timeout, callback)
+    return get_realtime_stream(url, callback)

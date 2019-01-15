@@ -2,7 +2,7 @@ import json
 from websocket import create_connection
 from websocket._exceptions import WebSocketTimeoutException
 
-from sense_exceptions import SenseAPITimeoutException
+from .sense_exceptions import SenseAPITimeoutException
 
 def get_realtime_stream(url, timeout):
     """ Reads realtime data from websocket

@@ -5,12 +5,12 @@ from time import time
 from datetime import datetime
 from requests.exceptions import ReadTimeout
 
-from sense_exceptions import *
-import ws_sync
+from .sense_exceptions import *
+from . import ws_sync
 if sys.version_info < (3, 6):
-    import ws_sync as websocket
+    from . import ws_sync as websocket
 else:
-    import ws_async as websocket
+    from . import ws_async as websocket
 
 API_URL = 'https://api.sense.com/apiservice/api/v1/'
 WS_URL = "wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s"
