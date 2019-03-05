@@ -2,8 +2,9 @@ import asyncio
 import aiohttp
 import json
 import websockets
-from .sense_exceptions import SenseAPITimeoutException
+
 from .sense_api import *
+from .sense_exceptions import *
 
 class ASyncSenseable(SenseableBase):
     
@@ -36,6 +37,7 @@ class ASyncSenseable(SenseableBase):
         if self._realtime and self.rate_limit and \
            self.last_realtime_call + self.rate_limit > time():
             return self._realtime
+        self.last_realtime_call = time()
         await self.async_realtime_stream(single=True)
     
     async def async_realtime_stream(self, callback=None, single=False):
@@ -85,4 +87,15 @@ class ASyncSenseable(SenseableBase):
         for scale in valid_scales:
             await self.get_trend_data(scale)
 
+    async def get_discovered_device_names(self):
+        # lots more info in here to be parsed out
+        json = self.api_call('app/monitors/%s/devices' %
+                                 self.sense_monitor_id)
+        self._devices = await [entry['name'] for entry in json]
+        return self._devices
+
+    async def get_discovered_device_data(self):
+        json = self.api_call('monitors/%s/devices' %
+                             self.sense_monitor_id)
+        return await json
 
