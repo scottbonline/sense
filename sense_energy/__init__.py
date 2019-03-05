@@ -1,8 +1,9 @@
-import sys
-from .Senseable import Senseable
+from .sense_api import SenseableBase
 from .sense_exceptions import *
 
-if sys.version_info >= (3, 6):
-    from .ASyncSenseable import ASyncSenseable
+from .senseable import Senseable
+import sys
+if sys.version_info >= (3, 5):
+    from .asyncsenseable import ASyncSenseable
 
 __version__ = "0.6.0"

@@ -4,8 +4,8 @@ from requests.exceptions import ReadTimeout
 from websocket import create_connection
 from websocket._exceptions import WebSocketTimeoutException
 
-from .sense_exceptions import SenseAPITimeoutException
 from .sense_api import *
+from .sense_exceptions import *
 
 class Senseable(SenseableBase):
 
