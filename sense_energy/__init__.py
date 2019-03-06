@@ -6,4 +6,4 @@ import sys
 if sys.version_info >= (3, 5):
     from .asyncsenseable import ASyncSenseable
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
