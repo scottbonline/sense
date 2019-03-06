@@ -27,13 +27,16 @@ pip install sense_energy
 ```
 
 ### Example Usage:
-```
-(pyvienv)  ~/code/sense/sense_energy   stable ●  python sense_api.py
-Please enter you Sense username (email address): 
-Please enter your Sense password:
-('Active:', 2917.29736328125, 'W')
-('Active Solar:', 0, 'W')
-('Active Devices:', u'Other, Always On')
+```python
+    sense = Senseable()
+    sense.authenticate(username, password)
+    sense.update_realtime()
+    sense.update_trend_data()
+    print ("Active:",sense.active_power,"W")
+    print ("Active Solar:",sense.active_solar_power,"W")
+    print ("Daily:",sense.daily_usage,"KW")
+    print ("Daily Solar:",sense.daily_production,"KW")
+    print ("Active Devices:",", ".join(sense.active_devices))
 ```
 
 There are plenty of methods for you to call so modify however you see fit
