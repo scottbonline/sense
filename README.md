@@ -23,7 +23,7 @@ https://github.com/kbickar
 ### Install
 
 ```
-pip install sense_energy
+pip install aiohttp sense_energy --user
 ```
 
 ### Example Usage:
