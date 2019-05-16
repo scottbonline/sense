@@ -58,6 +58,9 @@ class ASyncSenseable(SenseableBase):
                     self.set_realtime(data)
                     if callback: callback(data)
                     if single: return
+                elif result.get('type') == 'error':
+                    data = result['payload']
+                    raise SenseWebsocketException(data['error_reason'])
             
     async def get_realtime_future(self, callback):
         """ Returns an async Future to parse realtime data with callback"""

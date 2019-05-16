@@ -4,3 +4,6 @@ class SenseAPITimeoutException(Exception):
 
 class SenseAuthenticationException(Exception):
     pass
+
+class SenseWebsocketException(Exception):
+    pass
