@@ -9,7 +9,7 @@ API_URL = 'https://api.sense.com/apiservice/api/v1/'
 WS_URL = "wss://clientrt.sense.com/monitors/%s/realtimefeed?access_token=%s"
 API_TIMEOUT = 5
 WSS_TIMEOUT = 5
-RATE_LIMIT = 30
+RATE_LIMIT = 60
 
 # for the last hour, day, week, month, or year
 valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
@@ -23,6 +23,7 @@ class SenseableBase(object):
         # Timeout instance variables
         self.api_timeout = api_timeout
         self.wss_timeout = wss_timeout
+        self.rate_limit = RATE_LIMIT
         
         self._realtime = {}
         self._devices = []
