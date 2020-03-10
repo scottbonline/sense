@@ -18,6 +18,7 @@ class ASyncSenseable(SenseableBase):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(API_URL+'authenticate',
+                                        timeout=self.api_timeout,
                                         data=auth_data) as resp:
 
                     # check for 200 return
