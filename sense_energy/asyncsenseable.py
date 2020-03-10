@@ -30,7 +30,7 @@ class ASyncSenseable(SenseableBase):
                     # Build out some common variables
                     self.set_auth_data(await resp.json())
         except Exception as e:
-            raise Exception('Connection failure: %s' % e)
+            raise SenseAPITimeoutException('Connection failure: %s' % e)
                 
     # Update the realtime data for asyncio
     async def update_realtime(self):
