@@ -18,6 +18,7 @@ class ASyncSenseable(SenseableBase):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(API_URL+'authenticate',
+                                        timeout=self.api_timeout,
                                         data=auth_data) as resp:
 
                     # check for 200 return
@@ -29,7 +30,7 @@ class ASyncSenseable(SenseableBase):
                     # Build out some common variables
                     self.set_auth_data(await resp.json())
         except Exception as e:
-            raise Exception('Connection failure: %s' % e)
+            raise SenseAPITimeoutException('Connection failure: %s' % e)
                 
     # Update the realtime data for asyncio
     async def update_realtime(self):
