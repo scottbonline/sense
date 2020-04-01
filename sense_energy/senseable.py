@@ -107,16 +107,10 @@ class Senseable(SenseableBase):
         return self.api_call('app/monitors/%s/devices/%s' %
                              (self.sense_monitor_id, device_id))
 
-    def get_notification_preferences(self):
-        # Get notification preferences
-        payload = {'monitor_id': '%s' % self.sense_monitor_id}
-        return self.api_call('users/%s/notifications' %
-                             self.sense_user_id, payload)
-
     def get_all_usage_data(self):
         payload = {'n_items': 30}
         # lots of info in here to be parsed out
-        return self.s.get('users/%s/timeline' %
-                          self.sense_user_id, payload)
+        return self.api_call('users/%s/timeline' %
+                          (self.sense_user_id), payload)
 
 
