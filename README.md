@@ -26,7 +26,7 @@ https://github.com/kbickar
 pip install sense_energy
 ```
 
-### Example Usage:
+### Example Usage
 ```python
     sense = Senseable()
     sense.authenticate(username, password)
@@ -39,8 +39,6 @@ pip install sense_energy
     print ("Active Devices:",", ".join(sense.active_devices))
 ```
 
-There are plenty of methods for you to call so modify however you see fit
-
 If using the API to log data, you should only create one instance of Senseable and 
 then reuse that to get the updated stats.  Creating the instance authenticates 
 with the Sense API which should only be once every 15-20 minutes at most.  
@@ -49,3 +47,20 @@ and `get_realtime()` will retrieve the latest real time stats.
 
 The get_realtime() is by default rate limited to one call per 30 seconds. This can
 be modified by setting the Senseable object attribute `rate_limit` to a different value.
+
+### Methods
+
+There are two types of API calls made by the library. Those to get the realtime data, and those to get trend/device/usage/historic data:
+
+Method | Description
+-- | --
+`always_on_info()` | Always on info - pretty generic similar to the web page.
+`authenticate(username, password)` | -
+`get_all_usage_data()` | Returns the last 30 usage events like devices being turned on for X minutes.
+`get_device_info(device_id)` | Get specific informaton about a device.
+`get_discovered_device_data()` | Returns a list of the discovered devices including all the data available on the API (name, type, powered on, etc).
+`get_discovered_device_names()` | Returns a list of the names of devices discovered.
+`get_monitor_info()` | View info on your monitor & device detection status.
+`get_realtime_stream()` | Reads realtime data from websocket. Continues until loop broken.
+`get_trend_data(scale)` | Fetches the trend data for a scale of time (e.g. day, month, year). It's mostly used when called by `update_trend_data()` which will get the trend data for all of the scales.
+`update_realtime()` | Update the realtime data.
