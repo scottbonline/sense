@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import json
 import websockets
+import ssl
 
 from .sense_api import *
 from .sense_exceptions import *
@@ -13,6 +14,8 @@ class ASyncSenseable(SenseableBase):
             "email": username,
             "password": password
         }
+
+        self.ssl_context = ssl.create_default_context()
 
         # Get auth token
         try:
@@ -45,7 +48,7 @@ class ASyncSenseable(SenseableBase):
         """ Reads realtime data from websocket"""
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         # hello, features, [updates,] data
-        async with websockets.connect(url) as ws:
+        async with websockets.connect(url, ssl=self.ssl_context) as ws:
             while True:
                 try:
                     message = await asyncio.wait_for(
