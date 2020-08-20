@@ -5,13 +5,18 @@ from time import time
 
 class PlugInstance:
 
-    def __init__(self, alias, start_time, power=0, current = 0, voltage=120, mac=None, device_id=None):      
-        self.alias = alias
+    def __init__(self, id, start_time, alias=None, power=0, current = 0, voltage=120, mac=None, device_id=None):      
+        self.id = id
         self.start_time = start_time
         
         self.voltage = voltage
         self.power = power
         self.current = current
+        
+        if alias:
+            self.alias = alias
+        else:
+            self.alias = id
         
         if not self.power:
             self.power = self.voltage*self.current
@@ -30,7 +35,7 @@ class PlugInstance:
         return ':'.join('%02x' % b for b in mac)
 
     def generate_deviceid(self):
-        return hashlib.sha1(self.alias.encode('utf-8')).hexdigest()
+        return hashlib.sha1(self.id.encode('utf-8')).hexdigest()
 
     def generate_response(self):
         # Response dict

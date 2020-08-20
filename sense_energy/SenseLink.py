@@ -86,7 +86,8 @@ class SenseLink:
 async def test():
     import time
     def test_devices():
-        devices = [PlugInstance("Lamp", time()-20, power=10), PlugInstance("Fan", time()-20, power=14)]
+        devices = [PlugInstance("lamp1", time()-20, alias="Lamp", power=10), 
+                   PlugInstance("fan1", time()-300, alias="Fan", power=140)]
         for d in devices:
             yield d
     sl = SenseLink(test_devices)
