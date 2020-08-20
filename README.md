@@ -1,11 +1,18 @@
 # sense_api
-Sense Energy Monitor API Interface [WIP]
+## Sense Energy Monitor API Interface
+The Sense API provides access to the unofficial API for the Sense Energy Monitor.  Through the API,
+one can retrieve both realtime and trend data including individual devices.
 
 Systematic access to the Sense monitor data. Exploratory work on pulling data from Sense
-to be used in other tools - Smartthings, ActiveTiles, etc. 
+to be used in other tools - HomeASsistant, Smartthings, ActiveTiles, etc. 
 
 Python version based on the work done here in Powershell:
 https://gist.github.com/mbrownnycnyc/db3209a1045746f5e287ea6b6631e19c
+
+## Local Device Emulation
+The SenseLink class emulates the energy monitoring functionality of TP-Link Kasa HS110 Smart Plugs
+ and allows you to report "custom" power usage to your Sense Home Energy Monitor.  This requires 
+enabling "TP-Link HS110/HS300 Smart Plug" in the Sense app
 
 ### Contributors
 
