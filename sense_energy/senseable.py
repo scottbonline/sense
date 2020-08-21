@@ -1,5 +1,6 @@
 import json
 import requests
+import ssl
 from requests.exceptions import ReadTimeout
 from websocket import create_connection
 from websocket._exceptions import WebSocketTimeoutException
@@ -14,7 +15,7 @@ class Senseable(SenseableBase):
             "email": username,
             "password": password
         }
-
+        
         # Create session
         self.s = requests.session()
 
@@ -48,7 +49,7 @@ class Senseable(SenseableBase):
         ws = 0
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         try:
-            ws = create_connection(url, timeout=self.wss_timeout)
+            ws = create_connection(url, timeout=self.wss_timeout, sslopt={"cert_reqs": ssl.CERT_NONE})
             while True: # hello, features, [updates,] data
                 result = json.loads(ws.recv())
                 if result.get('type') == 'realtime_update':
