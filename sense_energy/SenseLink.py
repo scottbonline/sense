@@ -83,20 +83,3 @@ class SenseLink:
             
     async def stop(self):
         self.transport.close()
-
-async def test():
-    import time
-    def test_devices():
-        devices = [PlugInstance("lamp1", time()-20, alias="Lamp", power=10), 
-                   PlugInstance("fan1", time()-300, alias="Fan", power=140)]
-        for d in devices:
-            yield d
-    sl = SenseLink(test_devices)
-    await sl.start()
-    try:
-        await asyncio.sleep(180)  # Serve for 3 minutes
-    finally:
-        await sl.stop()
-
-if __name__ == "__main__":
-    asyncio.run(test())

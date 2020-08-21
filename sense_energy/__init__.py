@@ -5,7 +5,7 @@ from .senseable import Senseable
 import sys
 if sys.version_info >= (3, 5):
     from .asyncsenseable import ASyncSenseable
-from .PlugInstance import PlugInstance
-from .SenseLink import SenseLink
+    from .PlugInstance import PlugInstance
+    from .SenseLink import SenseLink
 
 __version__ = "0.7.0"
