@@ -23,7 +23,7 @@
 from struct import pack
 
 
-def encrypt(string):
+def tp_link_encrypt(string):
     key = 171
     result = pack('>I', len(string))
     for i in string:
@@ -33,7 +33,7 @@ def encrypt(string):
     return result
 
 
-def decrypt(string):
+def tp_link_decrypt(string):
     key = 171
     result = ""
     for i in string:

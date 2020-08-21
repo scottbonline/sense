@@ -6,8 +6,9 @@
 import logging
 import asyncio
 import json
-import TPLinkEncryption
-from PlugInstance import PlugInstance
+
+from .TPLinkEncryption import *
+from .PlugInstance import PlugInstance
 
 SENSE_TP_LINK_PORT = 9999
 
@@ -23,7 +24,7 @@ class SenseLinkServerProtocol:
         pass
 
     def datagram_received(self, data, addr):
-        decrypted_data = TPLinkEncryption.decrypt(data)
+        decrypted_data = tp_link_decrypt(data)
 
         try:
             json_data = json.loads(decrypted_data)
@@ -43,7 +44,7 @@ class SenseLinkServerProtocol:
                     # Build response
                     response = plug.generate_response()
                     json_resp = json.dumps(response, separators=(',', ':'))
-                    encrypted_resp = TPLinkEncryption.encrypt(json_resp)
+                    encrypted_resp = tp_link_encrypt(json_resp)
                     # Strip leading 4 bytes for...some reason
                     encrypted_resp = encrypted_resp[4:]
 
