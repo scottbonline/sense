@@ -5,9 +5,8 @@ from time import time
 
 class PlugInstance:
 
-    def __init__(self, id, start_time, alias=None, power=0, current = 0, voltage=120, mac=None, device_id=None):      
+    def __init__(self, id, start_time=None, alias=None, power=0, current=0, voltage=120, mac=None, device_id=None):      
         self.id = id
-        self.start_time = start_time
         
         self.voltage = voltage
         self.power = power
@@ -17,6 +16,9 @@ class PlugInstance:
             self.alias = alias
         else:
             self.alias = id
+            
+        if start_time: self.start_time = start_time
+        else: self.start_time = time()-1
         
         if not self.power:
             self.power = self.voltage*self.current
