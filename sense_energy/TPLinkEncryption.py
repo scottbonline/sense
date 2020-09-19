@@ -25,12 +25,14 @@ from struct import pack
 
 def tp_link_encrypt(string):
     key = 171
-    result = pack('>I', len(string))
-    for i in string:
-        a = key ^ ord(i)
-        key = a
-        result += bytes([a])
-    return result
+    unencrypted = string.encode()
+    buf = bytearray(pack(">I", len(unencrypted)))
+    for unencryptedbyte in unencrypted:
+        cipherbyte = key ^ unencryptedbyte
+        key = cipherbyte
+        buf.append(cipherbyte)
+
+    return bytes(buf)
 
 
 def tp_link_decrypt(string):
