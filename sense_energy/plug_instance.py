@@ -66,7 +66,7 @@ class PlugInstance:
                     "alias": self.alias,
                     "dev_name": "Wi-Fi Smart Plug With Energy Monitoring",
                     "icon_hash": "",
-                    "relay_state": 1,  # Assuming it's on, not sure it matters
+                    "relay_state": 1 if self.power > 0 else 0,
                     "on_time": time() - self.start_time,
                     "active_mode": "none",
                     "feature": "TIM:ENE",
