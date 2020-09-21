@@ -7,8 +7,8 @@ import logging
 import asyncio
 import json
 
-from .TPLinkEncryption import *
-from .PlugInstance import PlugInstance
+from .tplink_encryption import *
+from .plug_instance import PlugInstance
 
 SENSE_TP_LINK_PORT = 9999
 
