@@ -65,7 +65,7 @@ class SenseableBase(object):
 
     @property
     def active_voltage(self):
-        return self._realtime.get('voltage', 0)
+        return self._realtime.get('voltage', [])
     
     @property
     def active_frequency(self):
