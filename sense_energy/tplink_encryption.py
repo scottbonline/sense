@@ -23,16 +23,16 @@
 from struct import pack
 
 
-def tp_link_encrypt(string):
+def _generate_tplink(unencrypted):
     key = 171
-    unencrypted = string.encode()
-    buf = bytearray(pack(">I", len(unencrypted)))
     for unencryptedbyte in unencrypted:
-        cipherbyte = key ^ unencryptedbyte
-        key = cipherbyte
-        buf.append(cipherbyte)
+        key = key ^ unencryptedbyte
+        yield key
 
-    return bytes(buf)
+
+def tp_link_encrypt(string):
+    unencrypted = string.encode()
+    return pack(">I", len(unencrypted)) + bytes(_generate_tplink(unencrypted))
 
 
 def tp_link_decrypt(string):
