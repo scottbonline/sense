@@ -81,32 +81,26 @@ class SenseableBase(object):
     
     @property
     def weekly_usage(self):
-        # Add today's usage
         return self.get_trend('WEEK', False)
 
     @property
     def weekly_production(self):
-        # Add today's production
         return self.get_trend('WEEK', True)
     
     @property
     def monthly_usage(self):
-        # Add today's usage
         return self.get_trend('MONTH', False)
 
     @property
     def monthly_production(self):
-        # Add today's production
         return self.get_trend('MONTH', True)
     
     @property
     def yearly_usage(self):
-        # Add this month's usage
         return self.get_trend('YEAR', False)
 
     @property
-    def yeary_production(self):
-        # Add this month's production
+    def yearly_production(self):
         return self.get_trend('YEAR', True)
 
     @property
