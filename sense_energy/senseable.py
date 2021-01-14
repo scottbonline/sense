@@ -64,7 +64,7 @@ class Senseable(SenseableBase):
     def get_trend_data(self, scale):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
-        t = datetime.now().replace(hour=12)
+        t = datetime.now().replace(hour=0, minute=0, second=0)
         self._trend_data[scale] = self.api_call(
             'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
             (self.sense_monitor_id, scale, t.isoformat()))
