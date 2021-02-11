@@ -24,6 +24,7 @@ class SenseableBase(object):
         self.api_timeout = api_timeout
         self.wss_timeout = wss_timeout
         self.rate_limit = RATE_LIMIT
+        self.last_realtime_call = 0
         
         self._realtime = {}
         self._devices = []
