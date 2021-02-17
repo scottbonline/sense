@@ -29,10 +29,14 @@ class ASyncSenseable(SenseableBase):
             wss_timeout=wss_timeout,
         )
 
-    async def authenticate(self, username, password):
+    async def authenticate(self, username, password, cafile=""):
         auth_data = {"email": username, "password": password}
 
-        self.ssl_context = ssl.create_default_context()
+        # Use custom certificate verification, if specified
+        if (cafile):
+            self.ssl_context = ssl.create_default_context(cafile=cafile)
+        else:
+            self.ssl_context = ssl.create_default_context()
 
         # Get auth token
         try:
