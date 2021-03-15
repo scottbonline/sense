@@ -20,11 +20,10 @@ class Senseable(SenseableBase):
         self.s = requests.session()
 
         # Use custom ssl verification, if specified
-        if (ssl_verify):
-            if (ssl_cafile != ''):
-                self.s.verify = ssl_cafile
-        else:
+        if not ssl_verify:
             self.s.verify = False
+        elif ssl_cafile:
+            self.s.verify = ssl_cafile:
 
         # Get auth token
         try:
