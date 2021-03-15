@@ -33,15 +33,14 @@ class ASyncSenseable(SenseableBase):
         auth_data = {"email": username, "password": password}
 
         # Use custom ssl verification, if specified
-        if (ssl_verify):
-            if (ssl_cafile != ""):
-                self.ssl_context = ssl.create_default_context(cafile=ssl_cafile)
-            else:
-                self.ssl_context = ssl.create_default_context()
-        else:
+        if not ssl_verify:
             self.ssl_context = ssl.create_default_context()
             self.ssl_context.check_hostname = False
             self.ssl_context.verify_mode = ssl.CERT_NONE
+        elif ssl_cafile:
+            self.ssl_context = ssl.create_default_context(cafile=ssl_cafile)
+        else:
+            self.ssl_context = ssl.create_default_context()
 
         # Get auth token
         try:
