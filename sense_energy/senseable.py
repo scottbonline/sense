@@ -10,7 +10,7 @@ from .sense_exceptions import *
 
 class Senseable(SenseableBase):
 
-    def authenticate(self, username, password):
+    def authenticate(self, username, password, ssl_verify=True, ssl_cafile=''):
         auth_data = {
             "email": username,
             "password": password
@@ -18,6 +18,12 @@ class Senseable(SenseableBase):
         
         # Create session
         self.s = requests.session()
+
+        # Use custom ssl verification, if specified
+        if not ssl_verify:
+            self.s.verify = False
+        elif ssl_cafile:
+            self.s.verify = ssl_cafile
 
         # Get auth token
         try:
