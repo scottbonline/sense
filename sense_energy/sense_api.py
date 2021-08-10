@@ -42,17 +42,17 @@ class SenseableBase(object):
         # create the auth header
         self.headers = {'Authorization': 'bearer {}'.format(
             self.sense_access_token)}
-        
+
 
     @property
     def devices(self):
         """Return devices."""
         return self._devices
-    
+
     def set_realtime(self, data):
         self._realtime = data
         self.last_realtime_call = time()
-        
+
     def get_realtime(self):
         return self._realtime     
 
@@ -74,35 +74,99 @@ class SenseableBase(object):
     
     @property
     def daily_usage(self):
-        return self.get_trend('DAY', False)
+        return self.get_trend('DAY', 'consumption')
 
     @property
     def daily_production(self):
-        return self.get_trend('DAY', True)
-    
+        return self.get_trend('DAY', 'production')
+
+    @property
+    def daily_production_pct(self):
+        return self.get_trend('DAY', 'production_pct')
+
+    @property
+    def daily_net_production(self):
+        return self.get_trend('DAY', 'net_production')
+
+    @property
+    def daily_from_grid(self):
+        return self.get_trend('DAY', 'from_grid')
+
+    @property
+    def daily_to_grid(self):
+        return self.get_trend('DAY', 'to_grid')
+
     @property
     def weekly_usage(self):
-        return self.get_trend('WEEK', False)
+        return self.get_trend('WEEK', 'consumption')
 
     @property
     def weekly_production(self):
-        return self.get_trend('WEEK', True)
-    
+        return self.get_trend('WEEK', 'production')
+
+    @property
+    def weekly_production_pct(self):
+        return self.get_trend('WEEK', 'production_pct')
+
+    @property
+    def weekly_net_production(self):
+        return self.get_trend('WEEK', 'net_production')
+
+    @property
+    def weekly_from_grid(self):
+        return self.get_trend('WEEK', 'from_grid')
+
+    @property
+    def weekly_to_grid(self):
+        return self.get_trend('WEEK', 'to_grid')
+
     @property
     def monthly_usage(self):
-        return self.get_trend('MONTH', False)
+        return self.get_trend('MONTH', 'consumption')
 
     @property
     def monthly_production(self):
-        return self.get_trend('MONTH', True)
-    
+        return self.get_trend('MONTH', 'production')
+
+    @property
+    def monthly_production_pct(self):
+        return self.get_trend('MONTH', 'production_pct')
+
+    @property
+    def monthly_net_production(self):
+        return self.get_trend('MONTH', 'net_production')
+
+    @property
+    def monthly_from_grid(self):
+        return self.get_trend('MONTH', 'from_grid')
+
+    @property
+    def monthly_to_grid(self):
+        return self.get_trend('MONTH', 'to_grid')
+
     @property
     def yearly_usage(self):
-        return self.get_trend('YEAR', False)
+        return self.get_trend('YEAR', 'consumption')
 
     @property
     def yearly_production(self):
-        return self.get_trend('YEAR', True)
+        return self.get_trend('YEAR', 'production')
+
+    @property
+    def yearly_production_pct(self):
+        return self.get_trend('YEAR', 'production_pct')
+
+    @property
+    def yearly_net_production(self):
+        return self.get_trend('YEAR', 'net_production')
+
+    @property
+    def yearly_from_grid(self):
+        return self.get_trend('YEAR', 'from_grid')
+
+    @property
+    def yearly_to_grid(self):
+        return self.get_trend('YEAR', 'to_grid')
 
     @property
     def active_devices(self):
