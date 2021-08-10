@@ -108,12 +108,16 @@ class SenseableBase(object):
     def active_devices(self):
         return [d['name'] for d in self._realtime.get('devices', {})]
 
-    def get_trend(self, scale, is_production):
-        key = "production" if is_production else "consumption"       
+    def get_trend(self, scale, key='production'):
         if key not in self._trend_data[scale]: return 0
-        total = self._trend_data[scale][key].get('total', 0)
+        # Perform a check for a valid type
+        if not isinstance(self._trend_data[scale][key], (dict, float, int)): return 0
+        if isinstance(self._trend_data[scale][key], dict):
+          total = self._trend_data[scale][key].get('total', 0)
+        else:
+          total = self._trend_data[scale][key]
         if scale == 'WEEK' or scale == 'MONTH':
-            return total + self.get_trend('DAY', is_production)
+            return total + self.get_trend('DAY', key)
         if scale == 'YEAR':
-            return total + self.get_trend('MONTH', is_production)
+            return total + self.get_trend('MONTH', key)
         return total
