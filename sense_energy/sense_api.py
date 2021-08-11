@@ -188,7 +188,7 @@ class SenseableBase(object):
     def active_devices(self):
         return [d['name'] for d in self._realtime.get('devices', {})]
 
-    def get_trend(self, scale, key='production'):
+    def get_trend(self, scale, key):
         if key not in self._trend_data[scale]: return 0
         # Perform a check for a valid type
         if not isinstance(self._trend_data[scale][key], (dict, float, int)): return 0
