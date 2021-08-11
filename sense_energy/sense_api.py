@@ -97,6 +97,10 @@ class SenseableBase(object):
         return self.get_trend('DAY', 'to_grid')
 
     @property
+    def daily_solar_powered(self):
+        return self.get_trend('DAY', 'solar_powered')
+
+    @property
     def weekly_usage(self):
         return self.get_trend('WEEK', 'consumption')
 
@@ -119,6 +123,10 @@ class SenseableBase(object):
     @property
     def weekly_to_grid(self):
         return self.get_trend('WEEK', 'to_grid')
+
+    @property
+    def weekly_solar_powered(self):
+        return self.get_trend('WEEK', 'solar_powered')
 
     @property
     def monthly_usage(self):
@@ -145,6 +153,10 @@ class SenseableBase(object):
         return self.get_trend('MONTH', 'to_grid')
 
     @property
+    def monthly_solar_powered(self):
+        return self.get_trend('MONTH', 'solar_powered')
+
+    @property
     def yearly_usage(self):
         return self.get_trend('YEAR', 'consumption')
 
@@ -167,6 +179,10 @@ class SenseableBase(object):
     @property
     def yearly_to_grid(self):
         return self.get_trend('YEAR', 'to_grid')
+
+    @property
+    def yearly_solar_powered(self):
+        return self.get_trend('YEAR', 'solar_powered')
 
     @property
     def active_devices(self):
