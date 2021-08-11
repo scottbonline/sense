@@ -196,8 +196,4 @@ class SenseableBase(object):
           total = self._trend_data[scale][key].get('total', 0)
         else:
           total = self._trend_data[scale][key]
-        if scale == 'WEEK' or scale == 'MONTH':
-            return total + self.get_trend('DAY', key)
-        if scale == 'YEAR':
-            return total + self.get_trend('MONTH', key)
         return total
