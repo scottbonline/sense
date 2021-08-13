@@ -25,10 +25,10 @@ class SenseableBase(object):
         self.wss_timeout = wss_timeout
         self.rate_limit = RATE_LIMIT
         self.last_realtime_call = 0
-        
+
         self._realtime = {}
         self._devices = []
-        self._trend_data = {}        
+        self._trend_data = {}
         for scale in valid_scales: self._trend_data[scale] = {}
 
         if username and password:
@@ -43,7 +43,6 @@ class SenseableBase(object):
         self.headers = {'Authorization': 'bearer {}'.format(
             self.sense_access_token)}
 
-
     @property
     def devices(self):
         """Return devices."""
@@ -54,7 +53,7 @@ class SenseableBase(object):
         self.last_realtime_call = time()
 
     def get_realtime(self):
-        return self._realtime     
+        return self._realtime
 
     @property
     def active_power(self):
@@ -67,11 +66,11 @@ class SenseableBase(object):
     @property
     def active_voltage(self):
         return self._realtime.get('voltage', [])
-    
+
     @property
     def active_frequency(self):
         return self._realtime.get('hz', 0)
-    
+
     @property
     def daily_usage(self):
         return self.get_trend('DAY', 'consumption')
@@ -189,11 +188,12 @@ class SenseableBase(object):
         return [d['name'] for d in self._realtime.get('devices', {})]
 
     def get_trend(self, scale, key):
+        key = 'consumption' if key == 'usage' else key
         if key not in self._trend_data[scale]: return 0
         # Perform a check for a valid type
         if not isinstance(self._trend_data[scale][key], (dict, float, int)): return 0
         if isinstance(self._trend_data[scale][key], dict):
-          total = self._trend_data[scale][key].get('total', 0)
+            total = self._trend_data[scale][key].get('total', 0)
         else:
-          total = self._trend_data[scale][key]
+            total = self._trend_data[scale][key]
         return total
