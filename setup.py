@@ -19,7 +19,7 @@ setup(
     author = 'scottbonline',
     author_email = 'scottbonline@gmail.com',
     url = 'https://github.com/scottbonline/sense',
-    download_url = 'https://github.com/scottbonline/sense/archive/0.9.0.tar.gz', 
+    download_url = 'https://github.com/scottbonline/sense/archive/0.9.1.tar.gz',
     keywords = ['sense', 'energy', 'api', 'pytest'], 
     classifiers = [
         'Programming Language :: Python :: 2',
