@@ -37,7 +37,7 @@ class SenseLinkServerProtocol:
                     logging.debug("Ignoring non-empty/non-Sense UDP request")
                     return
 
-                logging.debug("Broadcast received from: %s: %s", addr, json_data)
+                logging.debug(f"Broadcast received from {addr}: {json_data}")
 
                 # Build and send responses
                 for plug in self._devices():
@@ -57,7 +57,7 @@ class SenseLinkServerProtocol:
                         # Do not send response, but log for debugging
                         logging.debug(f"SENSE_RESPONSE disabled, response content: {response}")
             else:
-                logging.info(f"Unexpected/unhandled message: {json_data}")
+                logging.debug(f"Ignoring non-emeter JSON from {addr}: {json_data}")
 
         # Appears to not be JSON
         except ValueError:
