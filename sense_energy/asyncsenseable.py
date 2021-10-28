@@ -1,5 +1,6 @@
 import asyncio
 import json
+import socket
 import ssl
 
 import aiohttp
@@ -73,8 +74,15 @@ class ASyncSenseable(SenseableBase):
         await self.async_realtime_stream(single=True)
 
     async def async_realtime_stream(self, callback=None, single=False):
-        """ Reads realtime data from websocket"""
+        """Reads realtime data from websocket"""
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
+        try:
+            self._async_realtime_stream(url, callback, single)
+        except socket.gaierror as ex:
+            raise SenseWebsocketException(f"Error during name resolution: {ex}")
+
+    async def _async_realtime_stream(self, url, callback, single):
+        """Reads realtime data from websocket"""
         # hello, features, [updates,] data
         async with websockets.connect(url, ssl=self.ssl_context) as ws:
             while True:
