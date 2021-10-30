@@ -84,7 +84,7 @@ class Senseable(SenseableBase):
             return self.s.get(API_URL + url,
                               headers=self.headers,
                               timeout=self.api_timeout,
-                              data=payload).json()
+                              params=payload).json()
         except ReadTimeout:
             raise SenseAPITimeoutException("API call timed out")   
 
