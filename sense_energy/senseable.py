@@ -84,7 +84,7 @@ class Senseable(SenseableBase):
             return self.s.get(API_URL + url,
                               headers=self.headers,
                               timeout=self.api_timeout,
-                              data=payload).json()
+                              params=payload).json()
         except ReadTimeout:
             raise SenseAPITimeoutException("API call timed out")   
 
@@ -114,8 +114,21 @@ class Senseable(SenseableBase):
         return self.api_call('app/monitors/%s/devices/%s' %
                              (self.sense_monitor_id, device_id))
 
-    def get_all_usage_data(self):
-        payload = {'n_items': 30}
+    def get_all_usage_data(self, payload = {'n_items': 30}):
+        """Gets usage data by device
+
+        Args:
+            payload (dict, optional): known params are:
+                n_items: the number of items to return
+                device_id: limit results to a specific device_id
+                prior_to_item:. date in format YYYY-MM-DDTHH:MM:SS.mmmZ 
+                rollup: ?
+                
+                Defaults to {'n_items': 30}.
+
+        Returns:
+            dict: usage data
+        """
         # lots of info in here to be parsed out
         return self.api_call('users/%s/timeline' %
                           (self.sense_user_id), payload)
