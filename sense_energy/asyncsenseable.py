@@ -112,19 +112,20 @@ class ASyncSenseable(SenseableBase):
             # timed out
             raise SenseAPITimeoutException("API call timed out") from ex
 
-    async def get_trend_data(self, scale):
+    async def get_trend_data(self, scale, dt=None):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
-        t = datetime.now().replace(hour=12)
+        if not dt:
+            dt = datetime.now().replace(hour=12)
         json = self.api_call(
             "app/history/trends?monitor_id=%s&scale=%s&start=%s"
-            % (self.sense_monitor_id, scale, t.isoformat())
+            % (self.sense_monitor_id, scale, dt.isoformat())
         )
         self._trend_data[scale] = await json
 
-    async def update_trend_data(self):
+    async def update_trend_data(self, dt=None):
         for scale in valid_scales:
-            await self.get_trend_data(scale)
+            await self.get_trend_data(scale, dt)
 
     async def get_discovered_device_names(self):
         # lots more info in here to be parsed out
