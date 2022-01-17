@@ -4,6 +4,7 @@ import ssl
 
 import aiohttp
 import websockets
+from datetime import datetime, timezone, timedelta
 
 from .sense_api import *
 from .sense_exceptions import *
@@ -116,7 +117,7 @@ class ASyncSenseable(SenseableBase):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
         if not dt:
-            dt = datetime.now().replace(hour=12)
+            dt = datetime.now(timezone(timedelta(0))).astimezone()
         json = self.api_call(
             "app/history/trends?monitor_id=%s&scale=%s&start=%s"
             % (self.sense_monitor_id, scale, dt.isoformat())
@@ -126,6 +127,12 @@ class ASyncSenseable(SenseableBase):
     async def update_trend_data(self, dt=None):
         for scale in valid_scales:
             await self.get_trend_data(scale, dt)
+
+    async def get_monitor_data(self):        
+        json = await self.api_call("app/monitors/%s/overview" % self.sense_monitor_id)
+        if 'monitor_overview' in json and 'monitor' in json['monitor_overview']:
+            self._monitor = json['monitor_overview']['monitor']
+        return self._monitor
 
     async def get_discovered_device_names(self):
         # lots more info in here to be parsed out

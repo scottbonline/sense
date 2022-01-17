@@ -71,7 +71,7 @@ class Senseable(SenseableBase):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
         if not dt:
-            dt = datetime.now().replace(hour=12)
+            dt = datetime.now(timezone(timedelta(0))).astimezone()
         self._trend_data[scale] = self.api_call(
             'app/history/trends?monitor_id=%s&scale=%s&start=%s' %
             (self.sense_monitor_id, scale, dt.isoformat()))
@@ -114,6 +114,13 @@ class Senseable(SenseableBase):
         # Get specific informaton about a device
         return self.api_call('app/monitors/%s/devices/%s' %
                              (self.sense_monitor_id, device_id))
+                             
+    def get_monitor_data(self):        
+        # Get monitor overview info
+        json = self.api_call("app/monitors/%s/overview" % self.sense_monitor_id)
+        if 'monitor_overview' in json and 'monitor' in json['monitor_overview']:
+            self._monitor = json['monitor_overview']['monitor']
+        return self._monitor
 
     def get_all_usage_data(self, payload = {'n_items': 30}):
         """Gets usage data by device

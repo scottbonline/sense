@@ -1,7 +1,6 @@
 import json
 import sys
 from time import time
-from datetime import datetime
 
 from .sense_exceptions import *
 
@@ -29,6 +28,7 @@ class SenseableBase(object):
         self._realtime = {}
         self._devices = []
         self._trend_data = {}
+        self._monitor = {}
         for scale in valid_scales: self._trend_data[scale] = {}
 
         if username and password:
@@ -186,6 +186,13 @@ class SenseableBase(object):
     @property
     def active_devices(self):
         return [d['name'] for d in self._realtime.get('devices', {})]
+        
+    @property
+    def time_zone(self):
+        return self._monitor.get('time_zone', '')
+        
+    def trend_start(self, scale):
+        return self._trend_data[scale]['start']
 
     def get_trend(self, scale, key):
         if isinstance(key, bool):
