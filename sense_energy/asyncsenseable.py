@@ -4,7 +4,6 @@ import ssl
 
 import aiohttp
 import websockets
-from datetime import datetime, timezone, timedelta
 
 from .sense_api import *
 from .sense_exceptions import *
@@ -117,13 +116,13 @@ class ASyncSenseable(SenseableBase):
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
         if not dt:
-            dt = datetime.now(timezone(timedelta(0))).astimezone()
+            dt = datetime.utcnow()
         json = self.api_call(
-            "app/history/trends?monitor_id=%s&scale=%s&start=%s"
-            % (self.sense_monitor_id, scale, dt.isoformat())
+            'app/history/trends?monitor_id=%s&scale=%s&start=%s'
+            % (self.sense_monitor_id, scale, dt.strftime('%Y-%m-%dT%H:%M:%S'))
         )
         self._trend_data[scale] = await json
-
+        
     async def update_trend_data(self, dt=None):
         for scale in valid_scales:
             await self.get_trend_data(scale, dt)

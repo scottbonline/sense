@@ -1,6 +1,7 @@
 import json
 import sys
 from time import time
+from datetime import datetime
 
 from .sense_exceptions import *
 
@@ -10,8 +11,8 @@ API_TIMEOUT = 5
 WSS_TIMEOUT = 5
 RATE_LIMIT = 60
 
-# for the last hour, day, week, month, or year
-valid_scales = ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR']
+# for the last day, week, month, or year
+valid_scales = ['DAY', 'WEEK', 'MONTH', 'YEAR']
 
 
 class SenseableBase(object):
@@ -192,7 +193,13 @@ class SenseableBase(object):
         return self._monitor.get('time_zone', '')
         
     def trend_start(self, scale):
-        return self._trend_data[scale]['start']
+        if 'start' not in self._trend_data[scale]:
+            return None
+        try:
+            start_iso = self._trend_data[scale]['start'].replace('Z', '+00:00')
+            return datetime.strptime(start_iso, '%Y-%m-%dT%H:%M:%S.%f%z')
+        except:
+            return None
 
     def get_trend(self, scale, key):
         if isinstance(key, bool):
