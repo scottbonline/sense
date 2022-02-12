@@ -25,7 +25,8 @@ class SenseableBase(object):
         self.wss_timeout = wss_timeout
         self.rate_limit = RATE_LIMIT
         self.last_realtime_call = 0
-
+        
+        self._mfa_token = ''
         self._realtime = {}
         self._devices = []
         self._trend_data = {}
@@ -195,11 +196,8 @@ class SenseableBase(object):
     def trend_start(self, scale):
         if 'start' not in self._trend_data[scale]:
             return None
-        try:
-            start_iso = self._trend_data[scale]['start'].replace('Z', '+00:00')
-            return datetime.strptime(start_iso, '%Y-%m-%dT%H:%M:%S.%f%z')
-        except:
-            return None
+        start_iso = self._trend_data[scale]['start'].replace('Z', '+00:00')
+        return datetime.strptime(start_iso, '%Y-%m-%dT%H:%M:%S.%f%z')
 
     def get_trend(self, scale, key):
         if isinstance(key, bool):

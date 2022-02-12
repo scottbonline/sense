@@ -32,6 +32,34 @@ class Senseable(SenseableBase):
         except Exception as e:
             raise Exception('Connection failure: %s' % e)
 
+        # check MFA code required
+        if response.status_code == 401:
+            data = response.json()
+            if 'mfa_token' in data:
+                self._mfa_token = data['mfa_token']
+                raise SenseMFARequiredException(data['error_reason'])
+                
+        # check for 200 return
+        if response.status_code != 200:
+            raise SenseAuthenticationException(
+                "Please check username and password. API Return Code: %s" %
+                response.status_code)
+        
+        self.set_auth_data(response.json())
+
+    def validate_mfa(self, code):
+        mfa_data = {
+            "totp": code, 
+            "mfa_token": self._mfa_token, 
+            "client_time:":datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        }
+        # Get auth token
+        try:
+            response = self.s.post(API_URL+'authenticate/mfa',
+                                   mfa_data, timeout=self.api_timeout)
+        except Exception as e:
+            raise Exception('Connection failure: %s' % e)
+
         # check for 200 return
         if response.status_code != 200:
             raise SenseAuthenticationException(

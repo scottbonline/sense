@@ -43,22 +43,45 @@ class ASyncSenseable(SenseableBase):
             self.ssl_context = ssl.create_default_context()
 
         # Get auth token
-        try:
-            async with self._client_session.post(
-                API_URL + "authenticate", timeout=self.api_timeout, data=auth_data
-            ) as resp:
+        async with self._client_session.post(
+            API_URL + "authenticate", timeout=self.api_timeout, data=auth_data
+        ) as resp:
 
-                # check for 200 return
-                if resp.status != 200:
-                    raise SenseAuthenticationException(
-                        "Please check username and password. API Return Code: %s"
-                        % resp.status
-                    )
+            # check MFA code required
+            if resp.status == 401:
+                data = await resp.json()
+                if 'mfa_token' in data:
+                    self._mfa_token = data['mfa_token']
+                    raise SenseMFARequiredException(data['error_reason'])
 
-                # Build out some common variables
-                self.set_auth_data(await resp.json())
-        except Exception as ex:
-            raise SenseAPITimeoutException("Connection failure: %s" % ex) from ex
+            # check for 200 return
+            if resp.status != 200:
+                raise SenseAuthenticationException(
+                    "Please check username and password. API Return Code: %s"
+                    % resp.status
+                )
+
+            # Build out some common variables
+            self.set_auth_data(await resp.json())
+
+    async def validate_mfa(self, code):
+        mfa_data = {
+            "totp": code, 
+            "mfa_token": self._mfa_token, 
+            "client_time:":datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+        }
+        
+        # Get auth token
+        async with self._client_session.post(
+            API_URL + "authenticate/mfa", timeout=self.api_timeout, data=mfa_data
+        ) as resp:
+
+            # check for 200 return
+            if resp.status != 200:
+                raise SenseAuthenticationException(f"API Return Code: {resp.status}")
+
+            # Build out some common variables
+            self.set_auth_data(await resp.json())
 
     # Update the realtime data for asyncio
     async def update_realtime(self):
