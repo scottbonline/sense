@@ -17,22 +17,23 @@ class ASyncSenseable(SenseableBase):
         api_timeout=API_TIMEOUT,
         wss_timeout=WSS_TIMEOUT,
         client_session=None,
+        ssl_verify=True, 
+        ssl_cafile=""
     ):
         """Init the ASyncSenseable object."""
         self._client_session = client_session or aiohttp.ClientSession()
-        self.ssl_context = None
 
         super().__init__(
             username=username,
             password=password,
             api_timeout=api_timeout,
             wss_timeout=wss_timeout,
+            ssl_verify=ssl_verify,
+            ssl_cafile=ssl_cafile,
         )
 
-    async def authenticate(self, username, password, ssl_verify=True, ssl_cafile=""):
-        auth_data = {"email": username, "password": password}
-
-        # Use custom ssl verification, if specified
+    def set_ssl_context(self, ssl_verify, ssl_cafile):
+        """Create or set the SSL context. Use custom ssl verification, if specified."""
         if not ssl_verify:
             self.ssl_context = ssl.create_default_context()
             self.ssl_context.check_hostname = False
@@ -41,6 +42,10 @@ class ASyncSenseable(SenseableBase):
             self.ssl_context = ssl.create_default_context(cafile=ssl_cafile)
         else:
             self.ssl_context = ssl.create_default_context()
+            
+    async def authenticate(self, username, password, ssl_verify=True, ssl_cafile=""):
+        auth_data = {"email": username, "password": password}
+        self.set_ssl_context(ssl_verify, ssl_cafile)
 
         # Get auth token
         async with self._client_session.post(

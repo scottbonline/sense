@@ -18,7 +18,9 @@ valid_scales = ['DAY', 'WEEK', 'MONTH', 'YEAR']
 class SenseableBase(object):
 
     def __init__(self, username=None, password=None,
-                 api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT):
+                 api_timeout=API_TIMEOUT, wss_timeout=WSS_TIMEOUT,
+        ssl_verify=True, 
+        ssl_cafile=""):
 
         # Timeout instance variables
         self.api_timeout = api_timeout
@@ -32,9 +34,18 @@ class SenseableBase(object):
         self._trend_data = {}
         self._monitor = {}
         for scale in valid_scales: self._trend_data[scale] = {}
+        self.set_ssl_context(ssl_verify, ssl_cafile)
 
         if username and password:
             self.authenticate(username, password)
+            
+    def load_auth(self, access_token, user_id, monitor_id):            
+        data = {
+            'access_token': access_token, 
+            'user_id': user_id, 
+            'monitors': [{'id':monitor_id}]
+        }
+        self.set_auth_data(data)
 
     def set_auth_data(self, data):
         self.sense_access_token = data['access_token']
