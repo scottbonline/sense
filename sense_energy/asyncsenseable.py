@@ -17,8 +17,8 @@ class ASyncSenseable(SenseableBase):
         api_timeout=API_TIMEOUT,
         wss_timeout=WSS_TIMEOUT,
         client_session=None,
-        ssl_verify=True, 
-        ssl_cafile=""
+        ssl_verify=True,
+        ssl_cafile="",
     ):
         """Init the ASyncSenseable object."""
         self._client_session = client_session or aiohttp.ClientSession()
@@ -42,7 +42,7 @@ class ASyncSenseable(SenseableBase):
             self.ssl_context = ssl.create_default_context(cafile=ssl_cafile)
         else:
             self.ssl_context = ssl.create_default_context()
-            
+
     async def authenticate(self, username, password, ssl_verify=True, ssl_cafile=""):
         auth_data = {"email": username, "password": password}
         self.set_ssl_context(ssl_verify, ssl_cafile)
@@ -55,9 +55,9 @@ class ASyncSenseable(SenseableBase):
             # check MFA code required
             if resp.status == 401:
                 data = await resp.json()
-                if 'mfa_token' in data:
-                    self._mfa_token = data['mfa_token']
-                    raise SenseMFARequiredException(data['error_reason'])
+                if "mfa_token" in data:
+                    self._mfa_token = data["mfa_token"]
+                    raise SenseMFARequiredException(data["error_reason"])
 
             # check for 200 return
             if resp.status != 200:
@@ -71,11 +71,11 @@ class ASyncSenseable(SenseableBase):
 
     async def validate_mfa(self, code):
         mfa_data = {
-            "totp": code, 
-            "mfa_token": self._mfa_token, 
-            "client_time:":datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            "totp": code,
+            "mfa_token": self._mfa_token,
+            "client_time:": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
-        
+
         # Get auth token
         async with self._client_session.post(
             API_URL + "authenticate/mfa", timeout=self.api_timeout, data=mfa_data
@@ -101,7 +101,7 @@ class ASyncSenseable(SenseableBase):
         await self.async_realtime_stream(single=True)
 
     async def async_realtime_stream(self, callback=None, single=False):
-        """ Reads realtime data from websocket"""
+        """Reads realtime data from websocket"""
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         # hello, features, [updates,] data
         async with websockets.connect(url, ssl=self.ssl_context) as ws:
@@ -126,7 +126,7 @@ class ASyncSenseable(SenseableBase):
                     raise SenseWebsocketException(data["error_reason"])
 
     async def get_realtime_future(self, callback):
-        """ Returns an async Future to parse realtime data with callback"""
+        """Returns an async Future to parse realtime data with callback"""
         await self.async_realtime_stream(callback)
 
     async def api_call(self, url, payload={}):
@@ -146,19 +146,19 @@ class ASyncSenseable(SenseableBase):
         if not dt:
             dt = datetime.utcnow()
         json = self.api_call(
-            'app/history/trends?monitor_id=%s&scale=%s&start=%s'
-            % (self.sense_monitor_id, scale, dt.strftime('%Y-%m-%dT%H:%M:%S'))
+            "app/history/trends?monitor_id=%s&scale=%s&start=%s"
+            % (self.sense_monitor_id, scale, dt.strftime("%Y-%m-%dT%H:%M:%S"))
         )
         self._trend_data[scale] = await json
-        
+
     async def update_trend_data(self, dt=None):
         for scale in valid_scales:
             await self.get_trend_data(scale, dt)
 
-    async def get_monitor_data(self):        
+    async def get_monitor_data(self):
         json = await self.api_call("app/monitors/%s/overview" % self.sense_monitor_id)
-        if 'monitor_overview' in json and 'monitor' in json['monitor_overview']:
-            self._monitor = json['monitor_overview']['monitor']
+        if "monitor_overview" in json and "monitor" in json["monitor_overview"]:
+            self._monitor = json["monitor_overview"]["monitor"]
         return self._monitor
 
     async def get_discovered_device_names(self):
