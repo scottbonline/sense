@@ -135,6 +135,10 @@ class ASyncSenseable(SenseableBase):
             async with self._client_session.get(
                 API_URL + url, headers=self.headers, timeout=timeout, data=payload
             ) as resp:
+                # check for 200 return
+                if resp.status != 200:
+                    raise SenseAuthenticationException(f"API Return Code: {resp.status}")
+
                 return await resp.json()
         except asyncio.TimeoutError as ex:
             # timed out
