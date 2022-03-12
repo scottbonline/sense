@@ -25,6 +25,7 @@ class SenseableBase(object):
         ssl_verify=True,
         ssl_cafile="",
     ):
+        """Initialize SenseableBase object."""
 
         # Timeout instance variables
         self.api_timeout = api_timeout
@@ -45,6 +46,7 @@ class SenseableBase(object):
             self.authenticate(username, password)
 
     def load_auth(self, access_token, user_id, monitor_id):
+        """Load the authentication data from a previous session."""
         data = {
             "access_token": access_token,
             "user_id": user_id,
@@ -53,6 +55,7 @@ class SenseableBase(object):
         self.set_auth_data(data)
 
     def set_auth_data(self, data):
+        """Set the authentication data for the session."""
         self.sense_access_token = data["access_token"]
         self.sense_user_id = data["user_id"]
         self.sense_monitor_id = data["monitors"][0]["id"]
@@ -62,14 +65,16 @@ class SenseableBase(object):
 
     @property
     def devices(self):
-        """Return devices."""
+        """List of discovered device names."""
         return self._devices
 
-    def set_realtime(self, data):
+    def _set_realtime(self, data):
+        """Sets the realtime data structure."""
         self._realtime = data
         self.last_realtime_call = time()
 
     def get_realtime(self):
+        """Return the raw realtime data structure."""
         return self._realtime
 
     @property
@@ -209,12 +214,14 @@ class SenseableBase(object):
         return self._monitor.get("time_zone", "")
 
     def trend_start(self, scale):
+        """Return start of trend last updated."""
         if "start" not in self._trend_data[scale]:
             return None
         start_iso = self._trend_data[scale]["start"].replace("Z", "+00:00")
         return datetime.strptime(start_iso, "%Y-%m-%dT%H:%M:%S.%f%z")
 
     def get_trend(self, scale, key):
+        """Return trend data item from last update."""
         if isinstance(key, bool):
             key = "production" if key is True else "consumption"
         else:

@@ -44,6 +44,8 @@ class ASyncSenseable(SenseableBase):
             self.ssl_context = ssl.create_default_context()
 
     async def authenticate(self, username, password, ssl_verify=True, ssl_cafile=""):
+        """Authenticate with username (email) and password. Optionally set SSL context as well.
+        This or `load_auth` must be called once at the start of the session."""
         auth_data = {"email": username, "password": password}
         self.set_ssl_context(ssl_verify, ssl_cafile)
 
@@ -70,6 +72,8 @@ class ASyncSenseable(SenseableBase):
             self.set_auth_data(await resp.json())
 
     async def validate_mfa(self, code):
+        """Validate a multi-factor authentication code after authenticate raised SenseMFARequiredException.
+        Authentication process is completed if code is valid. """
         mfa_data = {
             "totp": code,
             "mfa_token": self._mfa_token,
@@ -88,8 +92,8 @@ class ASyncSenseable(SenseableBase):
             # Build out some common variables
             self.set_auth_data(await resp.json())
 
-    # Update the realtime data for asyncio
     async def update_realtime(self):
+        """Update the realtime data (device status and current power)."""
         # rate limit API calls
         if (
             self._realtime
@@ -101,7 +105,8 @@ class ASyncSenseable(SenseableBase):
         await self.async_realtime_stream(single=True)
 
     async def async_realtime_stream(self, callback=None, single=False):
-        """Reads realtime data from websocket"""
+        """Reads realtime data from websocket.  Data is passed to callback if available.
+        Continues reading realtime stream data forever unless 'single' is set to True."""
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         # hello, features, [updates,] data
         async with websockets.connect(url, ssl=self.ssl_context) as ws:
@@ -116,7 +121,7 @@ class ASyncSenseable(SenseableBase):
                 result = json.loads(message)
                 if result.get("type") == "realtime_update":
                     data = result["payload"]
-                    self.set_realtime(data)
+                    self._set_realtime(data)
                     if callback:
                         callback(data)
                     if single:
@@ -129,7 +134,8 @@ class ASyncSenseable(SenseableBase):
         """Returns an async Future to parse realtime data with callback"""
         await self.async_realtime_stream(callback)
 
-    async def api_call(self, url, payload={}):
+    async def _api_call(self, url, payload={}):
+        """Make a call to the Sense API directly and return the json results."""
         timeout = aiohttp.ClientTimeout(total=self.api_timeout)
         try:
             async with self._client_session.get(
@@ -145,32 +151,38 @@ class ASyncSenseable(SenseableBase):
             raise SenseAPITimeoutException("API call timed out") from ex
 
     async def get_trend_data(self, scale, dt=None):
+        """Update trend data for specified scale from API.  
+        Optionally set a date to fetch data from."""
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
         if not dt:
             dt = datetime.utcnow()
-        json = self.api_call(
+        json = self._api_call(
             "app/history/trends?monitor_id=%s&scale=%s&start=%s"
             % (self.sense_monitor_id, scale, dt.strftime("%Y-%m-%dT%H:%M:%S"))
         )
         self._trend_data[scale] = await json
 
     async def update_trend_data(self, dt=None):
+        """Update trend data of all scales from API.  
+        Optionally set a date to fetch data from."""
         for scale in valid_scales:
             await self.get_trend_data(scale, dt)
 
     async def get_monitor_data(self):
-        json = await self.api_call("app/monitors/%s/overview" % self.sense_monitor_id)
+        """Get monitor overview info from API."""
+        json = await self._api_call("app/monitors/%s/overview" % self.sense_monitor_id)
         if "monitor_overview" in json and "monitor" in json["monitor_overview"]:
             self._monitor = json["monitor_overview"]["monitor"]
         return self._monitor
 
     async def get_discovered_device_names(self):
-        # lots more info in here to be parsed out
-        json = self.api_call("app/monitors/%s/devices" % self.sense_monitor_id)
+        """Get list of device names from API."""
+        json = self._api_call("app/monitors/%s/devices" % self.sense_monitor_id)
         self._devices = await [entry["name"] for entry in json]
         return self._devices
 
     async def get_discovered_device_data(self):
-        json = self.api_call("monitors/%s/devices" % self.sense_monitor_id)
+        """Get list of raw device data from API."""
+        json = self._api_call("monitors/%s/devices" % self.sense_monitor_id)
         return await json

@@ -18,6 +18,8 @@ class Senseable(SenseableBase):
             self.s.verify = ssl_cafile
 
     def authenticate(self, username, password, ssl_verify=True, ssl_cafile=""):
+        """Authenticate with username (email) and password. Optionally set SSL context as well.
+        This or `load_auth` must be called once at the start of the session."""
         auth_data = {"email": username, "password": password}
 
         # Create session
@@ -49,6 +51,8 @@ class Senseable(SenseableBase):
         self.set_auth_data(response.json())
 
     def validate_mfa(self, code):
+        """Validate a multi-factor authentication code after authenticate raised SenseMFARequiredException.
+        Authentication process is completed if code is valid. """
         mfa_data = {
             "totp": code,
             "mfa_token": self._mfa_token,
@@ -71,8 +75,8 @@ class Senseable(SenseableBase):
 
         self.set_auth_data(response.json())
 
-    # Update the realtime data
     def update_realtime(self):
+        """Update the realtime data (device status and current power)."""
         # rate limit API calls
         if (
             self._realtime
@@ -84,8 +88,8 @@ class Senseable(SenseableBase):
         next(self.get_realtime_stream())
 
     def get_realtime_stream(self):
-        """Reads realtime data from websocket
-        Continues until loop broken"""
+        """Reads realtime data from websocket.  Realtime data variable is set and data is 
+        returned through generator. Continues until loop broken."""
         ws = 0
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         try:
@@ -96,7 +100,7 @@ class Senseable(SenseableBase):
                 result = json.loads(ws.recv())
                 if result.get("type") == "realtime_update":
                     data = result["payload"]
-                    self.set_realtime(data)
+                    self._set_realtime(data)
                     yield data
         except WebSocketTimeoutException:
             raise SenseAPITimeoutException("API websocket timed out")
@@ -104,21 +108,8 @@ class Senseable(SenseableBase):
             if ws:
                 ws.close()
 
-    def get_trend_data(self, scale, dt=None):
-        if scale.upper() not in valid_scales:
-            raise Exception("%s not a valid scale" % scale)
-        if not dt:
-            dt = datetime.utcnow()
-        self._trend_data[scale] = self.api_call(
-            "app/history/trends?monitor_id=%s&scale=%s&start=%s"
-            % (self.sense_monitor_id, scale, dt.strftime("%Y-%m-%dT%H:%M:%S"))
-        )
-
-    def update_trend_data(self, dt=None):
-        for scale in valid_scales:
-            self.get_trend_data(scale, dt)
-
-    def api_call(self, url, payload={}):
+    def _api_call(self, url, payload={}):
+        """Make a call to the Sense API directly and return the json results."""
         try:
             return self.s.get(
                 API_URL + url,
@@ -129,40 +120,59 @@ class Senseable(SenseableBase):
         except ReadTimeout:
             raise SenseAPITimeoutException("API call timed out")
 
-    def get_discovered_device_names(self):
-        # lots more info in here to be parsed out
-        json = self.api_call("app/monitors/%s/devices" % self.sense_monitor_id)
-        self._devices = [entry["name"] for entry in json]
-        return self._devices
-
-    def get_discovered_device_data(self):
-        return self.api_call("monitors/%s/devices" % self.sense_monitor_id)
-
-    def always_on_info(self):
-        # Always on info - pretty generic similar to the web page
-        return self.api_call(
-            "app/monitors/%s/devices/always_on" % self.sense_monitor_id
+    def get_trend_data(self, scale, dt=None):
+        """Update trend data for specified scale from API.  
+        Optionally set a date to fetch data from."""
+        if scale.upper() not in valid_scales:
+            raise Exception("%s not a valid scale" % scale)
+        if not dt:
+            dt = datetime.utcnow()
+        self._trend_data[scale] = self._api_call(
+            "app/history/trends?monitor_id=%s&scale=%s&start=%s"
+            % (self.sense_monitor_id, scale, dt.strftime("%Y-%m-%dT%H:%M:%S"))
         )
 
-    def get_monitor_info(self):
-        # View info on your monitor & device detection status
-        return self.api_call("app/monitors/%s/status" % self.sense_monitor_id)
-
-    def get_device_info(self, device_id):
-        # Get specific informaton about a device
-        return self.api_call(
-            "app/monitors/%s/devices/%s" % (self.sense_monitor_id, device_id)
-        )
+    def update_trend_data(self, dt=None):
+        """Update trend data of all scales from API.  
+        Optionally set a date to fetch data from."""
+        for scale in valid_scales:
+            self.get_trend_data(scale, dt)
 
     def get_monitor_data(self):
-        # Get monitor overview info
-        json = self.api_call("app/monitors/%s/overview" % self.sense_monitor_id)
+        """Get monitor overview info from API."""
+        json = self._api_call("app/monitors/%s/overview" % self.sense_monitor_id)
         if "monitor_overview" in json and "monitor" in json["monitor_overview"]:
             self._monitor = json["monitor_overview"]["monitor"]
         return self._monitor
 
+    def get_discovered_device_names(self):
+        """Get list of device names from API."""
+        json = self._api_call("app/monitors/%s/devices" % self.sense_monitor_id)
+        self._devices = [entry["name"] for entry in json]
+        return self._devices
+
+    def get_discovered_device_data(self):
+        """Get list of raw device data from API."""
+        return self._api_call("monitors/%s/devices" % self.sense_monitor_id)
+
+    def always_on_info(self):
+        """Always on info from API - pretty generic similar to the web page."""
+        return self._api_call(
+            "app/monitors/%s/devices/always_on" % self.sense_monitor_id
+        )
+
+    def get_monitor_info(self):
+        """View info on monitor & device detection status from API."""
+        return self._api_call("app/monitors/%s/status" % self.sense_monitor_id)
+
+    def get_device_info(self, device_id):
+        """Get specific informaton about a device from API."""
+        return self._api_call(
+            "app/monitors/%s/devices/%s" % (self.sense_monitor_id, device_id)
+        )
+
     def get_all_usage_data(self, payload={"n_items": 30}):
-        """Gets usage data by device
+        """Gets usage data by device from API
 
         Args:
             payload (dict, optional): known params are:
@@ -177,4 +187,4 @@ class Senseable(SenseableBase):
             dict: usage data
         """
         # lots of info in here to be parsed out
-        return self.api_call("users/%s/timeline" % (self.sense_user_id), payload)
+        return self._api_call("users/%s/timeline" % (self.sense_user_id), payload)
