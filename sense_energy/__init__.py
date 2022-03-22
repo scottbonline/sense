@@ -8,4 +8,4 @@ if sys.version_info >= (3, 5):
     from .plug_instance import PlugInstance
     from .sense_link import SenseLink
 
-__version__ = "0.10.2"
+__version__ = "0.10.3"
