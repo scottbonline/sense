@@ -12,3 +12,7 @@ class SenseMFARequiredException(Exception):
 
 class SenseWebsocketException(Exception):
     pass
+
+
+class SenseAPIException(Exception):
+    pass
