@@ -141,8 +141,8 @@ class ASyncSenseable(SenseableBase):
             async with self._client_session.get(
                 API_URL + url, headers=self.headers, timeout=timeout, data=payload
             ) as resp:
-                # check for 200 return
-                if resp.status == 401 or resp.status == 403:
+                # 4xx represents unauthenticated
+                if resp.status == 401 or resp.status == 403 or resp.status == 404:
                     raise SenseAuthenticationException(f"API Return Code: {resp.status}")
                     
                 if resp.status != 200:
