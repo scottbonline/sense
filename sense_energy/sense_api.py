@@ -1,5 +1,3 @@
-import json
-import sys
 import uuid
 from time import time
 from datetime import datetime
@@ -46,13 +44,12 @@ class SenseableBase(object):
         if device_id:
             self.device_id = device_id
         else:
-            self.device_id = str(uuid.uuid4()).replace("-","")
-            
+            self.device_id = str(uuid.uuid4()).replace("-", "")
+
         self.headers = {"x-sense-device-id": self.device_id}
 
         if username and password:
             self.authenticate(username, password)
-            
 
     def load_auth(self, access_token, user_id, device_id, refresh_token):
         """Load the authentication data from a previous session."""
@@ -63,9 +60,9 @@ class SenseableBase(object):
             "refresh_token": refresh_token,
         }
         self._set_auth_data(data)
-        
+
     def set_monitor_id(self, monitor_id):
-        self.sense_monitor_id = monitor_id 
+        self.sense_monitor_id = monitor_id
 
     def _set_auth_data(self, data):
         """Set the authentication data for the session."""
@@ -74,8 +71,10 @@ class SenseableBase(object):
         self.refresh_token = data["refresh_token"]
 
         # create the auth header
-        self.headers = {"x-sense-device-id": self.device_id, 
-                        "Authorization": "bearer {}".format(self.sense_access_token)}
+        self.headers = {
+            "x-sense-device-id": self.device_id,
+            "Authorization": "bearer {}".format(self.sense_access_token),
+        }
 
     @property
     def devices(self):

@@ -3,41 +3,47 @@
 import hashlib
 from time import time
 
-class PlugInstance:
 
-    def __init__(self, id, start_time=None, alias=None, power=0, current=0, voltage=120, mac=None, device_id=None):      
+class PlugInstance:
+    def __init__(self, id, start_time=None, alias=None, power=0, current=0, voltage=120, mac=None, device_id=None):
         self.id = id
-        
+
         self.voltage = voltage
         self.power = power
         self.current = current
-        
+
         if alias:
             self.alias = alias
         else:
             self.alias = id
-            
-        if start_time: self.start_time = start_time
-        else: self.start_time = time()-1
-        
-        if not self.power:
-            self.power = self.voltage*self.current
-        if not self.current:
-            self.current = self.power/self.voltage
 
-        if device_id: self.device_id = device_id
-        else: self.device_id = self.generate_deviceid()
-        
-        if mac: self.mac = mac
-        else: self.mac = self.generate_mac()
+        if start_time:
+            self.start_time = start_time
+        else:
+            self.start_time = time() - 1
+
+        if not self.power:
+            self.power = self.voltage * self.current
+        if not self.current:
+            self.current = self.power / self.voltage
+
+        if device_id:
+            self.device_id = device_id
+        else:
+            self.device_id = self.generate_deviceid()
+
+        if mac:
+            self.mac = mac
+        else:
+            self.mac = self.generate_mac()
 
     def generate_mac(self):
-        end = [int(self.device_id[i:i+2],16) for i in range(0, len(self.device_id), 2)]
+        end = [int(self.device_id[i : i + 2], 16) for i in range(0, len(self.device_id), 2)]
         mac = [53, 75, 31] + end[:3]
-        return ':'.join('%02x' % b for b in mac)
+        return ":".join("%02x" % b for b in mac)
 
     def generate_deviceid(self):
-        return hashlib.sha1(self.id.encode('utf-8')).hexdigest()
+        return hashlib.sha1(self.id.encode("utf-8")).hexdigest()
 
     def generate_response(self):
         # Response dict
@@ -47,8 +53,8 @@ class PlugInstance:
                     "current": self.current,
                     "voltage": self.voltage,
                     "power": self.power,
-                    "total": 0,     # Unsure if this needs a value, appears not to
-                    "err_code": 0   # No errors here!
+                    "total": 0,  # Unsure if this needs a value, appears not to
+                    "err_code": 0,  # No errors here!
                 }
             },
             "system": {
@@ -71,12 +77,11 @@ class PlugInstance:
                     "active_mode": "none",
                     "feature": "TIM:ENE",
                     "updating": 0,
-                    "rssi": -60,    # Great wifi signal
-                    "led_off": 0,   # Probably not important
-                    "latitude": 39.8283,    # Center of the US
-                    "longitude": -98.5795   # Center of the US
+                    "rssi": -60,  # Great wifi signal
+                    "led_off": 0,  # Probably not important
+                    "latitude": 39.8283,  # Center of the US
+                    "longitude": -98.5795,  # Center of the US
                 }
-            }
+            },
         }
         return response
- 

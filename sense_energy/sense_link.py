@@ -1,7 +1,7 @@
 # Copyright 2020, Charles Powell
 
-# SenseLink is a tool that emulates the energy monitoring functionality of TP-Link Kasa HS110 Smart Plugs, 
-# and allows you to report "custom" power usage to your Sense Home Energy Monitor based on other parameters. 
+# SenseLink is a tool that emulates the energy monitoring functionality of TP-Link Kasa HS110 Smart Plugs,
+# and allows you to report "custom" power usage to your Sense Home Energy Monitor based on other parameters.
 
 import logging
 import asyncio
@@ -12,14 +12,15 @@ from .plug_instance import PlugInstance
 
 SENSE_TP_LINK_PORT = 9999
 
+
 class SenseLinkServerProtocol:
     def __init__(self, devices):
         self._devices = devices
         self.should_respond = True
-        
+
     def connection_made(self, transport):
         self.transport = transport
-        
+
     def connection_lost(self, exc):
         pass
 
@@ -29,10 +30,14 @@ class SenseLinkServerProtocol:
         try:
             json_data = json.loads(decrypted_data)
             # Sense requests the emeter and system parameters
-            if 'emeter' in json_data and 'get_realtime' in json_data["emeter"] and \
-               'system' in json_data and 'get_sysinfo' in json_data["system"]:
+            if (
+                "emeter" in json_data
+                and "get_realtime" in json_data["emeter"]
+                and "system" in json_data
+                and "get_sysinfo" in json_data["system"]
+            ):
                 # Check for non-empty values, to prevent echo storms
-                if json_data['emeter']['get_realtime']:
+                if json_data["emeter"]["get_realtime"]:
                     # This is a self-echo, common with Docker without --net=Host!
                     logging.debug("Ignoring non-empty/non-Sense UDP request")
                     return
@@ -43,7 +48,7 @@ class SenseLinkServerProtocol:
                 for plug in self._devices():
                     # Build response
                     response = plug.generate_response()
-                    json_resp = json.dumps(response, separators=(',', ':'))
+                    json_resp = json.dumps(response, separators=(",", ":"))
                     encrypted_resp = tp_link_encrypt(json_resp)
                     # Strip leading 4 bytes for...some reason
                     encrypted_resp = encrypted_resp[4:]
@@ -78,8 +83,8 @@ class SenseLink:
     async def start(self):
         loop = asyncio.get_running_loop()
         self.transport, self.protocol = await loop.create_datagram_endpoint(
-            lambda: SenseLinkServerProtocol(self._devices),
-            local_addr=('0.0.0.0', self.port))
-            
+            lambda: SenseLinkServerProtocol(self._devices), local_addr=("0.0.0.0", self.port)
+        )
+
     async def stop(self):
         self.transport.close()

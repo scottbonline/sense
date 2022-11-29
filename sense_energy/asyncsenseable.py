@@ -66,8 +66,7 @@ class ASyncSenseable(SenseableBase):
             # check for 200 return
             if resp.status != 200:
                 raise SenseAuthenticationException(
-                    "Please check username and password. API Return Code: %s"
-                    % resp.status
+                    "Please check username and password. API Return Code: %s" % resp.status
                 )
 
             # Build out some common variables
@@ -77,7 +76,7 @@ class ASyncSenseable(SenseableBase):
 
     async def validate_mfa(self, code):
         """Validate a multi-factor authentication code after authenticate raised SenseMFARequiredException.
-        Authentication process is completed if code is valid. """
+        Authentication process is completed if code is valid."""
         mfa_data = {
             "totp": code,
             "mfa_token": self._mfa_token,
@@ -97,7 +96,7 @@ class ASyncSenseable(SenseableBase):
             data = await resp.json()
             self._set_auth_data(data)
             self.set_monitor_id(data["monitors"][0]["id"])
-            
+
     async def renew_auth(self):
         renew_data = {
             "user_id": self.sense_user_id,
@@ -114,25 +113,18 @@ class ASyncSenseable(SenseableBase):
                 raise SenseAuthenticationException(f"API Return Code: {resp.status}")
 
             self._set_auth_data(await resp.json())
-            
+
     async def logout(self):
         # Get auth token
-        async with self._client_session.get(
-            API_URL + "logout", timeout=self.api_timeout, data=renew_data
-        ) as resp:
+        async with self._client_session.get(API_URL + "logout", timeout=self.api_timeout, data=renew_data) as resp:
             # check for 200 return
             if resp.status != 200:
                 raise SenseAPIException(f"API Return Code: {resp.status}")
-        
 
     async def update_realtime(self):
         """Update the realtime data (device status and current power)."""
         # rate limit API calls
-        if (
-            self._realtime
-            and self.rate_limit
-            and self.last_realtime_call + self.rate_limit > time()
-        ):
+        if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > time():
             return self._realtime
         self.last_realtime_call = time()
         await self.async_realtime_stream(single=True)
@@ -145,9 +137,7 @@ class ASyncSenseable(SenseableBase):
         async with websockets.connect(url, ssl=self.ssl_context) as ws:
             while True:
                 try:
-                    message = await asyncio.wait_for(
-                        ws.recv(), timeout=self.wss_timeout
-                    )
+                    message = await asyncio.wait_for(ws.recv(), timeout=self.wss_timeout)
                 except asyncio.TimeoutError as ex:
                     raise SenseAPITimeoutException("API websocket timed out") from ex
 
@@ -177,7 +167,7 @@ class ASyncSenseable(SenseableBase):
                 # 4xx represents unauthenticated
                 if resp.status == 401 or resp.status == 403 or resp.status == 404:
                     raise SenseAuthenticationException(f"API Return Code: {resp.status}")
-                    
+
                 if resp.status != 200:
                     raise SenseAPIException(f"API Return Code: {resp.status}")
 
@@ -187,7 +177,7 @@ class ASyncSenseable(SenseableBase):
             raise SenseAPITimeoutException("API call timed out") from ex
 
     async def get_trend_data(self, scale, dt=None):
-        """Update trend data for specified scale from API.  
+        """Update trend data for specified scale from API.
         Optionally set a date to fetch data from."""
         if scale.upper() not in valid_scales:
             raise Exception("%s not a valid scale" % scale)
@@ -200,7 +190,7 @@ class ASyncSenseable(SenseableBase):
         self._trend_data[scale] = await json
 
     async def update_trend_data(self, dt=None):
-        """Update trend data of all scales from API.  
+        """Update trend data of all scales from API.
         Optionally set a date to fetch data from."""
         for scale in valid_scales:
             await self.get_trend_data(scale, dt)
