@@ -1,5 +1,6 @@
 import json
 import sys
+import uuid
 from time import time
 from datetime import datetime
 
@@ -24,6 +25,7 @@ class SenseableBase(object):
         wss_timeout=WSS_TIMEOUT,
         ssl_verify=True,
         ssl_cafile="",
+        device_id=None,
     ):
         """Initialize SenseableBase object."""
 
@@ -41,27 +43,39 @@ class SenseableBase(object):
         for scale in valid_scales:
             self._trend_data[scale] = {}
         self.set_ssl_context(ssl_verify, ssl_cafile)
+        if device_id:
+            self.device_id = device_id
+        else:
+            self.device_id = str(uuid.uuid4()).replace("-","")
+            
+        self.headers = {"x-sense-device-id": self.device_id}
 
         if username and password:
             self.authenticate(username, password)
+            
 
-    def load_auth(self, access_token, user_id, monitor_id):
+    def load_auth(self, access_token, user_id, device_id, refresh_token):
         """Load the authentication data from a previous session."""
+        self.device_id = device_id
         data = {
             "access_token": access_token,
             "user_id": user_id,
-            "monitors": [{"id": monitor_id}],
+            "refresh_token": refresh_token,
         }
-        self.set_auth_data(data)
+        self._set_auth_data(data)
+        
+    def set_monitor_id(self, monitor_id):
+        self.sense_monitor_id = monitor_id 
 
-    def set_auth_data(self, data):
+    def _set_auth_data(self, data):
         """Set the authentication data for the session."""
         self.sense_access_token = data["access_token"]
         self.sense_user_id = data["user_id"]
-        self.sense_monitor_id = data["monitors"][0]["id"]
+        self.refresh_token = data["refresh_token"]
 
         # create the auth header
-        self.headers = {"Authorization": "bearer {}".format(self.sense_access_token)}
+        self.headers = {"x-sense-device-id": self.device_id, 
+                        "Authorization": "bearer {}".format(self.sense_access_token)}
 
     @property
     def devices(self):

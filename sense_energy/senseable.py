@@ -10,6 +10,33 @@ from .sense_exceptions import *
 
 
 class Senseable(SenseableBase):
+    def __init__(
+        self,
+        username=None,
+        password=None,
+        api_timeout=API_TIMEOUT,
+        wss_timeout=WSS_TIMEOUT,
+        client_session=None,
+        ssl_verify=True,
+        ssl_cafile="",
+        device_id=None,
+    ):
+        """Init the Senseable object."""
+
+        # Create session
+        self.s = requests.session()
+        self.set_ssl_context(ssl_verify, ssl_cafile)
+
+        super().__init__(
+            username=username,
+            password=password,
+            api_timeout=api_timeout,
+            wss_timeout=wss_timeout,
+            ssl_verify=ssl_verify,
+            ssl_cafile=ssl_cafile,
+            device_id=device_id,
+        )
+        
     def set_ssl_context(self, ssl_verify, ssl_cafile):
         """Create or set the SSL context. Use custom ssl verification, if specified."""
         if not ssl_verify:
@@ -22,33 +49,32 @@ class Senseable(SenseableBase):
         This or `load_auth` must be called once at the start of the session."""
         auth_data = {"email": username, "password": password}
 
-        # Create session
-        self.s = requests.session()
-        self.set_ssl_context(ssl_verify, ssl_cafile)
-
         # Get auth token
         try:
-            response = self.s.post(
-                API_URL + "authenticate", auth_data, timeout=self.api_timeout
+            resp = self.s.post(
+                API_URL + "authenticate", auth_data,
+                headers=self.headers, timeout=self.api_timeout
             )
         except Exception as e:
             raise Exception("Connection failure: %s" % e)
 
         # check MFA code required
-        if response.status_code == 401:
-            data = response.json()
+        if resp.status_code == 401:
+            data = resp.json()
             if "mfa_token" in data:
                 self._mfa_token = data["mfa_token"]
                 raise SenseMFARequiredException(data["error_reason"])
 
         # check for 200 return
-        if response.status_code != 200:
+        if resp.status_code != 200:
             raise SenseAuthenticationException(
                 "Please check username and password. API Return Code: %s"
-                % response.status_code
+                % resp.status_code
             )
 
-        self.set_auth_data(response.json())
+        data = resp.json()
+        self._set_auth_data(data)
+        self.set_monitor_id(data["monitors"][0]["id"])
 
     def validate_mfa(self, code):
         """Validate a multi-factor authentication code after authenticate raised SenseMFARequiredException.
@@ -60,20 +86,58 @@ class Senseable(SenseableBase):
         }
         # Get auth token
         try:
-            response = self.s.post(
-                API_URL + "authenticate/mfa", mfa_data, timeout=self.api_timeout
+            resp = self.s.post(
+                API_URL + "authenticate/mfa", mfa_data, 
+                headers=self.headers, timeout=self.api_timeout
             )
         except Exception as e:
             raise Exception("Connection failure: %s" % e)
 
         # check for 200 return
-        if response.status_code != 200:
+        if resp.status_code != 200:
             raise SenseAuthenticationException(
                 "Please check username and password. API Return Code: %s"
-                % response.status_code
+                % resp.status_code
             )
 
-        self.set_auth_data(response.json())
+        data = resp.json()
+        self._set_auth_data(data)
+        self.set_monitor_id(data["monitors"][0]["id"])
+        
+    def renew_auth(self):
+        renew_data = {
+            "user_id": self.sense_user_id,
+            "refresh_token": self.refresh_token,
+        }
+
+        # Get auth token
+        try:
+            resp = self.s.post(
+                API_URL + "renew", renew_data,
+                headers=self.headers, timeout=self.api_timeout
+            )
+        except Exception as e:
+            raise Exception("Connection failure: %s" % e)
+
+        # check for 200 return
+        if resp.status_code != 200:
+            raise SenseAuthenticationException(
+                "Please check username and password. API Return Code: %s"
+                % resp.status_code
+            )
+
+        self._set_auth_data(resp.json())
+        
+    async def logout(self):
+        try:
+            resp = self.s.get(API_URL + "logout", timeout=self.api_timeout)
+        except Exception as e:
+            raise Exception("Connection failure: %s" % e)
+
+        # check for 200 return
+        if resp.status_code != 200:
+            raise SenseAPIException("API Return Code: %s", resp.status_code)
+
 
     def update_realtime(self):
         """Update the realtime data (device status and current power)."""

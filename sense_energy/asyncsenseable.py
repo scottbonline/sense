@@ -19,6 +19,7 @@ class ASyncSenseable(SenseableBase):
         client_session=None,
         ssl_verify=True,
         ssl_cafile="",
+        device_id=None,
     ):
         """Init the ASyncSenseable object."""
         self._client_session = client_session or aiohttp.ClientSession()
@@ -30,6 +31,7 @@ class ASyncSenseable(SenseableBase):
             wss_timeout=wss_timeout,
             ssl_verify=ssl_verify,
             ssl_cafile=ssl_cafile,
+            device_id=device_id,
         )
 
     def set_ssl_context(self, ssl_verify, ssl_cafile):
@@ -51,7 +53,7 @@ class ASyncSenseable(SenseableBase):
 
         # Get auth token
         async with self._client_session.post(
-            API_URL + "authenticate", timeout=self.api_timeout, data=auth_data
+            API_URL + "authenticate", headers=self.headers, timeout=self.api_timeout, data=auth_data
         ) as resp:
 
             # check MFA code required
@@ -69,7 +71,9 @@ class ASyncSenseable(SenseableBase):
                 )
 
             # Build out some common variables
-            self.set_auth_data(await resp.json())
+            data = await resp.json()
+            self._set_auth_data(data)
+            self.set_monitor_id(data["monitors"][0]["id"])
 
     async def validate_mfa(self, code):
         """Validate a multi-factor authentication code after authenticate raised SenseMFARequiredException.
@@ -82,7 +86,7 @@ class ASyncSenseable(SenseableBase):
 
         # Get auth token
         async with self._client_session.post(
-            API_URL + "authenticate/mfa", timeout=self.api_timeout, data=mfa_data
+            API_URL + "authenticate/mfa", headers=self.headers, timeout=self.api_timeout, data=mfa_data
         ) as resp:
 
             # check for 200 return
@@ -90,7 +94,36 @@ class ASyncSenseable(SenseableBase):
                 raise SenseAuthenticationException(f"API Return Code: {resp.status}")
 
             # Build out some common variables
-            self.set_auth_data(await resp.json())
+            data = await resp.json()
+            self._set_auth_data(data)
+            self.set_monitor_id(data["monitors"][0]["id"])
+            
+    async def renew_auth(self):
+        renew_data = {
+            "user_id": self.sense_user_id,
+            "refresh_token": self.refresh_token,
+        }
+
+        # Get auth token
+        async with self._client_session.post(
+            API_URL + "renew", headers=self.headers, timeout=self.api_timeout, data=renew_data
+        ) as resp:
+
+            # check for 200 return
+            if resp.status != 200:
+                raise SenseAuthenticationException(f"API Return Code: {resp.status}")
+
+            self._set_auth_data(await resp.json())
+            
+    async def logout(self):
+        # Get auth token
+        async with self._client_session.get(
+            API_URL + "logout", timeout=self.api_timeout, data=renew_data
+        ) as resp:
+            # check for 200 return
+            if resp.status != 200:
+                raise SenseAPIException(f"API Return Code: {resp.status}")
+        
 
     async def update_realtime(self):
         """Update the realtime data (device status and current power)."""
