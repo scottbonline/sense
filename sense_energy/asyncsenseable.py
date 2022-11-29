@@ -157,13 +157,17 @@ class ASyncSenseable(SenseableBase):
         """Returns an async Future to parse realtime data with callback"""
         await self.async_realtime_stream(callback)
 
-    async def _api_call(self, url, payload={}):
+    async def _api_call(self, url, payload={}, retry=False):
         """Make a call to the Sense API directly and return the json results."""
         timeout = aiohttp.ClientTimeout(total=self.api_timeout)
         try:
             async with self._client_session.get(
                 API_URL + url, headers=self.headers, timeout=timeout, data=payload
             ) as resp:
+                if not retry and resp.status == 401:
+                    await self.renew_auth()
+                    return await self._api_call(url, payload, True)
+
                 # 4xx represents unauthenticated
                 if resp.status == 401 or resp.status == 403 or resp.status == 404:
                     raise SenseAuthenticationException(f"API Return Code: {resp.status}")

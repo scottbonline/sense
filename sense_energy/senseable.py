@@ -153,15 +153,24 @@ class Senseable(SenseableBase):
             if ws:
                 ws.close()
 
-    def _api_call(self, url, payload={}):
+    def _api_call(self, url, payload={}, retry=False):
         """Make a call to the Sense API directly and return the json results."""
         try:
-            return self.s.get(
+            resp = self.s.get(
                 API_URL + url,
                 headers=self.headers,
                 timeout=self.api_timeout,
                 params=payload,
-            ).json()
+            )
+
+            if not retry and resp.status_code == 401:
+                self.renew_auth()
+                return self._api_call(url, payload, True)
+
+            # 4xx represents unauthenticated
+            if resp.status_code == 401 or resp.status_code == 403 or resp.status_code == 404:
+                raise SenseAuthenticationException("API Return Code: %s", resp.status_code)
+            return resp.json()
         except ReadTimeout:
             raise SenseAPITimeoutException("API call timed out")
 
