@@ -26,7 +26,8 @@ class Senseable(SenseableBase):
         self.s = requests.session()
         self.set_ssl_context(ssl_verify, ssl_cafile)
 
-        super().__init__(
+        SenseableBase.__init__(
+            self,
             username=username,
             password=password,
             api_timeout=api_timeout,
@@ -115,7 +116,7 @@ class Senseable(SenseableBase):
 
         self._set_auth_data(resp.json())
 
-    async def logout(self):
+    def logout(self):
         try:
             resp = self.s.get(API_URL + "logout", timeout=self.api_timeout)
         except Exception as e:
