@@ -84,7 +84,6 @@ class SenseableBase(object):
     def _set_realtime(self, data):
         """Sets the realtime data structure."""
         self._realtime = data
-        self.last_realtime_call = time()
 
     def get_realtime(self):
         """Return the raw realtime data structure."""

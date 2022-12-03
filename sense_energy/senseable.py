@@ -129,8 +129,10 @@ class Senseable(SenseableBase):
     def update_realtime(self):
         """Update the realtime data (device status and current power)."""
         # rate limit API calls
-        if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > time():
+        now = time()
+        if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > now:
             return self._realtime
+        self.last_realtime_call = now
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         next(self.get_realtime_stream())
 
