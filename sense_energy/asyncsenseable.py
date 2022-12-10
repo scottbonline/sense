@@ -124,9 +124,10 @@ class ASyncSenseable(SenseableBase):
     async def update_realtime(self):
         """Update the realtime data (device status and current power)."""
         # rate limit API calls
-        if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > time():
+        now = time()
+        if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > now:
             return self._realtime
-        self.last_realtime_call = time()
+        self.last_realtime_call = now
         await self.async_realtime_stream(single=True)
 
     async def async_realtime_stream(self, callback=None, single=False):
