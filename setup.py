@@ -12,7 +12,7 @@ setup(
         'websockets;python_version>="3.5"',
         'aiohttp;python_version>="3.5"',
     ], 
-    version = '0.11.0',
+    version = '0.11.1',
     description = 'API for the Sense Energy Monitor',
     long_description=long_description,
     long_description_content_type="text/markdown",
