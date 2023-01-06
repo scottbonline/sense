@@ -3,6 +3,7 @@ from setuptools import setup
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+version = '0.11.1',
 setup(
     name = 'sense_energy',
     packages = ['sense_energy'], 
@@ -12,7 +13,7 @@ setup(
         'websockets;python_version>="3.5"',
         'aiohttp;python_version>="3.5"',
     ], 
-    version = '0.11.1',
+    version = version,
     description = 'API for the Sense Energy Monitor',
     long_description=long_description,
     long_description_content_type="text/markdown",
