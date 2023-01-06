@@ -126,7 +126,7 @@ class Senseable(SenseableBase):
         if resp.status_code != 200:
             raise SenseAPIException("API Return Code: %s", resp.status_code)
 
-    def update_realtime(self):
+    def update_realtime(self, retry=True):
         """Update the realtime data (device status and current power)."""
         # rate limit API calls
         now = time()
@@ -134,7 +134,15 @@ class Senseable(SenseableBase):
             return self._realtime
         self.last_realtime_call = now
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
-        next(self.get_realtime_stream())
+        try:
+            next(self.get_realtime_stream())
+        except SenseAuthenticationException as e:
+            if retry:
+                self.renew_auth()
+                self.update_realtime(False)
+            else:
+                raise e
+                
 
     def get_realtime_stream(self):
         """Reads realtime data from websocket.  Realtime data variable is set and data is
@@ -149,6 +157,11 @@ class Senseable(SenseableBase):
                     data = result["payload"]
                     self._set_realtime(data)
                     yield data
+                elif result.get("type") == "error":
+                    data = result["payload"]
+                    if not data["authorized"]:
+                        raise SenseAuthenticationException("Web Socket Unauthorized")
+                    raise SenseWebsocketException(data["error_reason"])
         except WebSocketTimeoutException:
             raise SenseAPITimeoutException("API websocket timed out")
         finally:
