@@ -8,6 +8,8 @@ setup(
     name = 'sense_energy',
     packages = ['sense_energy'], 
     install_requires=[
+        'async_timeout>=3.0.1',
+        'orjson',
         'requests',
         'websocket-client',
         'websockets;python_version>="3.5"',
