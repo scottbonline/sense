@@ -1,13 +1,19 @@
 import asyncio
 import json
 import ssl
+import sys
 
 import aiohttp
+import orjson
 import websockets
 
 from .sense_api import *
 from .sense_exceptions import *
 
+if sys.version_info[:2] < (3, 11):
+    from async_timeout import timeout as asyncio_timeout
+else:
+    from asyncio import timeout as asyncio_timeout
 
 class ASyncSenseable(SenseableBase):
     def __init__(
@@ -145,11 +151,12 @@ class ASyncSenseable(SenseableBase):
         async with websockets.connect(url, ssl=self.ssl_context) as ws:
             while True:
                 try:
-                    message = await asyncio.wait_for(ws.recv(), timeout=self.wss_timeout)
+                    async with asyncio_timeout(self.wss_timeout):
+                        message = await ws.recv()
                 except asyncio.TimeoutError as ex:
                     raise SenseAPITimeoutException("API websocket timed out") from ex
 
-                result = json.loads(message)
+                result = orjson.loads(message)
                 if result.get("type") == "realtime_update":
                     data = result["payload"]
                     self._set_realtime(data)
