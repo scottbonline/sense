@@ -3,7 +3,7 @@ from setuptools import setup
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-version = '0.11.1'
+version = '{{VERSION_PLACEHOLDER}}'
 setup(
     name = 'sense_energy',
     packages = ['sense_energy'], 

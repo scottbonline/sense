@@ -1,0 +1,6 @@
+async_timeout
+orjson
+requests
+websocket-client
+websockets
+aiohttp
