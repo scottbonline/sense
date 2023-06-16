@@ -8,7 +8,6 @@ import asyncio
 import orjson
 from kasa_crypt import encrypt as tp_link_encrypt, decrypt as tp_link_decrypt
 
-from .tplink_encryption import *
 from .plug_instance import PlugInstance
 
 SENSE_TP_LINK_PORT = 9999
