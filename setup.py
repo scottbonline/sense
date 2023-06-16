@@ -14,6 +14,7 @@ setup(
         'websocket-client',
         'websockets;python_version>="3.5"',
         'aiohttp;python_version>="3.5"',
+        "kasa-crypt>=0.2.0",
     ], 
     version = version,
     description = 'API for the Sense Energy Monitor',
