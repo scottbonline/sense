@@ -1,6 +1,8 @@
 import json
-import requests
 import ssl
+from time import time
+
+import requests
 from requests.exceptions import ReadTimeout
 from websocket import create_connection
 from websocket._exceptions import WebSocketTimeoutException
