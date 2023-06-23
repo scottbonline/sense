@@ -1,5 +1,4 @@
 import uuid
-from time import time
 from datetime import datetime
 
 from .sense_exceptions import *

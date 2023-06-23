@@ -1,7 +1,7 @@
 import asyncio
-import json
 import ssl
 import sys
+from time import time
 
 import aiohttp
 import orjson

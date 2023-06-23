@@ -12,8 +12,8 @@ setup(
         'orjson',
         'requests',
         'websocket-client',
-        'websockets;python_version>="3.5"',
-        'aiohttp;python_version>="3.5"',
+        'websockets',
+        'aiohttp',
         "kasa-crypt>=0.2.0",
     ], 
     version = version,
@@ -26,7 +26,11 @@ setup(
     download_url = 'https://github.com/scottbonline/sense/archive/'+version+'.tar.gz',
     keywords = ['sense', 'energy', 'api'], 
     classifiers = [
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
 )
