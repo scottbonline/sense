@@ -5,9 +5,9 @@
 
 import logging
 import asyncio
-import json
+import orjson
+from kasa_crypt import encrypt as tp_link_encrypt, decrypt as tp_link_decrypt
 
-from .tplink_encryption import *
 from .plug_instance import PlugInstance
 
 SENSE_TP_LINK_PORT = 9999
@@ -28,7 +28,7 @@ class SenseLinkServerProtocol:
         decrypted_data = tp_link_decrypt(data)
 
         try:
-            json_data = json.loads(decrypted_data)
+            json_data = orjson.loads(decrypted_data)
             # Sense requests the emeter and system parameters
             if (
                 "emeter" in json_data
@@ -48,8 +48,8 @@ class SenseLinkServerProtocol:
                 for plug in self._devices():
                     # Build response
                     response = plug.generate_response()
-                    json_resp = json.dumps(response, separators=(",", ":"))
-                    encrypted_resp = tp_link_encrypt(json_resp)
+                    json_resp = orjson.dumps(response)
+                    encrypted_resp = tp_link_encrypt(json_resp.decode('utf-8'))
                     # Strip leading 4 bytes for...some reason
                     encrypted_resp = encrypted_resp[4:]
 
