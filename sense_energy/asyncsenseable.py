@@ -68,7 +68,10 @@ class ASyncSenseable(SenseableBase):
 
         # Get auth token
         async with self._client_session.post(
-            API_URL + "authenticate", headers=self.headers, timeout=self.api_timeout,  data=auth_data,
+            API_URL + "authenticate",
+            headers=self.headers,
+            timeout=self.api_timeout,
+            data=auth_data,
         ) as resp:
             # check MFA code required
             if resp.status == 401:
@@ -121,7 +124,10 @@ class ASyncSenseable(SenseableBase):
 
         # Get auth token
         async with self._client_session.post(
-            API_URL + "renew",  headers=self.headers,     timeout=self.api_timeout,     data=renew_data,
+            API_URL + "renew",
+            headers=self.headers,
+            timeout=self.api_timeout,
+            data=renew_data,
         ) as resp:
             # check for 200 return
             if resp.status != 200:
