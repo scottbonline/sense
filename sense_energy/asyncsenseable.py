@@ -83,8 +83,7 @@ class ASyncSenseable(SenseableBase):
             # check for 200 return
             if resp.status != 200:
                 raise SenseAuthenticationException(
-                    "Please check username and password. API Return Code: %s"
-                    % resp.status
+                    "Please check username and password. API Return Code: %s" % resp.status
                 )
 
             # Build out some common variables
@@ -138,9 +137,7 @@ class ASyncSenseable(SenseableBase):
 
     async def logout(self):
         # Get auth token
-        async with self._client_session.get(
-            API_URL + "logout", timeout=self.api_timeout, data=renew_data
-        ) as resp:
+        async with self._client_session.get(API_URL + "logout", timeout=self.api_timeout, data=renew_data) as resp:
             # check for 200 return
             if resp.status != 200:
                 raise SenseAPIException(f"API Return Code: {resp.status}")
@@ -149,11 +146,7 @@ class ASyncSenseable(SenseableBase):
         """Update the realtime data (device status and current power)."""
         # rate limit API calls
         now = time()
-        if (
-            self._realtime
-            and self.rate_limit
-            and self.last_realtime_call + self.rate_limit > now
-        ):
+        if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > now:
             return self._realtime
         self.last_realtime_call = now
         try:
@@ -210,9 +203,7 @@ class ASyncSenseable(SenseableBase):
 
                 # 4xx represents unauthenticated
                 if resp.status == 401 or resp.status == 403 or resp.status == 404:
-                    raise SenseAuthenticationException(
-                        f"API Return Code: {resp.status}"
-                    )
+                    raise SenseAuthenticationException(f"API Return Code: {resp.status}")
 
                 if resp.status != 200:
                     raise SenseAPIException(f"API Return Code: {resp.status}")
