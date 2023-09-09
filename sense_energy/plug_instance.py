@@ -48,8 +48,12 @@ class PlugInstance:
         """Initialize a plug instance."""
         self.id = id
         self.voltage = voltage
-        self.power = power or self.voltage * self.current
-        self.current = current or self.power / self.voltage
+        self.power = power
+        self.current = current
+        if not self.power:
+            self.power = self.voltage * self.current
+        if not self.current:
+            self.current = self.power / self.voltage
         self.alias = alias or id
         self.start_time = start_time or time() - 1
         if device_id:
