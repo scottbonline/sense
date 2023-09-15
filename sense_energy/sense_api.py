@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-
+import ciso8601
+from typing import Optional
 from .sense_exceptions import *
 
 API_URL = "https://api.sense.com/apiservice/api/v1/"
@@ -224,12 +225,15 @@ class SenseableBase(object):
     def time_zone(self):
         return self._monitor.get("time_zone", "")
 
-    def trend_start(self, scale):
+    def trend_start(self, scale) -> Optional[datetime]:
         """Return start of trend last updated."""
         if "start" not in self._trend_data[scale]:
             return None
-        start_iso = self._trend_data[scale]["start"].replace("Z", "+00:00")
-        return datetime.strptime(start_iso, "%Y-%m-%dT%H:%M:%S.%f%z")
+        try:
+            return ciso8601.parse_datetime(self._trend_data[scale]["start"])
+        except ValueError:
+            pass
+        return None
 
     def get_trend(self, scale, key):
         """Return trend data item from last update."""
