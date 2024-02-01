@@ -37,7 +37,11 @@ class SenseLinkServerProtocol:
 
     def datagram_received(self, data: bytes, addr: Union[Tuple[str, int], Tuple[str, int, int, int]]) -> None:
         """Handle incoming UDP datagram."""
-        decrypted_data = tp_link_decrypt(data)
+        try:
+            decrypted_data = tp_link_decrypt(data)
+        except UnicodeDecodeError:
+            _LOGGER.debug(f"Failed to decrypt data from {addr}")
+            return
 
         try:
             json_data = orjson.loads(decrypted_data)
