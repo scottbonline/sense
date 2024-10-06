@@ -5,7 +5,7 @@
 
 import asyncio
 import logging
-from typing import Callable, Iterator, Optional, Tuple, Union
+from typing import Iterator, Optional, Union
 
 import orjson
 from kasa_crypt import decrypt as tp_link_decrypt
@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 class SenseLinkServerProtocol:
     """Class to represent a SenseLink server."""
 
-    def __init__(self, devices: Callable[[], Iterator[PlugInstance]]) -> None:
+    def __init__(self, devices: callable[[], Iterator[PlugInstance]]) -> None:
         """Initialize the SenseLink server."""
         self._devices = devices
         self.should_respond = True
@@ -35,7 +35,7 @@ class SenseLinkServerProtocol:
         """Handle lost connection."""
         pass
 
-    def datagram_received(self, data: bytes, addr: Union[Tuple[str, int], Tuple[str, int, int, int]]) -> None:
+    def datagram_received(self, data: bytes, addr: Union[tuple[str, int], tuple[str, int, int, int]]) -> None:
         """Handle incoming UDP datagram."""
         try:
             decrypted_data = tp_link_decrypt(data)
@@ -90,7 +90,7 @@ class SenseLink:
 
     _devices = []
 
-    def __init__(self, devices: Callable[[], Iterator[PlugInstance]], port=SENSE_TP_LINK_PORT) -> None:
+    def __init__(self, devices: callable[[], Iterator[PlugInstance]], port=SENSE_TP_LINK_PORT) -> None:
         """Initialize the SenseLink server."""
         self.port = port
         self._devices = devices
