@@ -1,5 +1,6 @@
 import json
 import ssl
+from datetime import timezone
 from time import time
 
 import requests
@@ -55,7 +56,7 @@ class Senseable(SenseableBase):
         try:
             resp = self.s.post(API_URL + "authenticate", auth_data, headers=self.headers, timeout=self.api_timeout)
         except Exception as e:
-            raise Exception("Connection failure: %s" % e)
+            raise Exception(f"Connection failure: {e}")
 
         # check MFA code required
         if resp.status_code == 401:
@@ -67,7 +68,7 @@ class Senseable(SenseableBase):
         # check for 200 return
         if resp.status_code != 200:
             raise SenseAuthenticationException(
-                "Please check username and password. API Return Code: %s" % resp.status_code
+                f"Please check username and password. API Return Code: {resp.status_code}"
             )
 
         data = resp.json()
@@ -80,18 +81,18 @@ class Senseable(SenseableBase):
         mfa_data = {
             "totp": code,
             "mfa_token": self._mfa_token,
-            "client_time:": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "client_time:": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         # Get auth token
         try:
             resp = self.s.post(API_URL + "authenticate/mfa", mfa_data, headers=self.headers, timeout=self.api_timeout)
         except Exception as e:
-            raise Exception("Connection failure: %s" % e)
+            raise Exception(f"Connection failure: {e}")
 
         # check for 200 return
         if resp.status_code != 200:
             raise SenseAuthenticationException(
-                "Please check username and password. API Return Code: %s" % resp.status_code
+                f"Please check username and password. API Return Code: {resp.status_code}"
             )
 
         data = resp.json()
@@ -108,12 +109,12 @@ class Senseable(SenseableBase):
         try:
             resp = self.s.post(API_URL + "renew", renew_data, headers=self.headers, timeout=self.api_timeout)
         except Exception as e:
-            raise Exception("Connection failure: %s" % e)
+            raise Exception(f"Connection failure: {e}")
 
         # check for 200 return
         if resp.status_code != 200:
             raise SenseAuthenticationException(
-                "Please check username and password. API Return Code: %s" % resp.status_code
+                f"Please check username and password. API Return Code: {resp.status_code}"
             )
 
         self._set_auth_data(resp.json())
@@ -122,11 +123,11 @@ class Senseable(SenseableBase):
         try:
             resp = self.s.get(API_URL + "logout", timeout=self.api_timeout)
         except Exception as e:
-            raise Exception("Connection failure: %s" % e)
+            raise Exception(f"Connection failure: {e}")
 
         # check for 200 return
         if resp.status_code != 200:
-            raise SenseAPIException("API Return Code: %s", resp.status_code)
+            raise SenseAPIException(f"API Return Code: {resp.status_code}")
 
     def update_realtime(self, retry=True):
         """Update the realtime data (device status and current power)."""
@@ -135,7 +136,6 @@ class Senseable(SenseableBase):
         if self._realtime and self.rate_limit and self.last_realtime_call + self.rate_limit > now:
             return self._realtime
         self.last_realtime_call = now
-        url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         try:
             next(self.get_realtime_stream())
         except SenseAuthenticationException as e:
@@ -144,7 +144,6 @@ class Senseable(SenseableBase):
                 self.update_realtime(False)
             else:
                 raise e
-                
 
     def get_realtime_stream(self):
         """Reads realtime data from websocket.  Realtime data variable is set and data is
@@ -186,57 +185,55 @@ class Senseable(SenseableBase):
 
             # 4xx represents unauthenticated
             if resp.status_code == 401 or resp.status_code == 403 or resp.status_code == 404:
-                raise SenseAuthenticationException("API Return Code: %s", resp.status_code)
+                raise SenseAuthenticationException(f"API Return Code: {resp.status_code}")
             return resp.json()
         except ReadTimeout:
             raise SenseAPITimeoutException("API call timed out")
 
-    def get_trend_data(self, scale, dt=None):
+    def get_trend_data(self, scale: Scale, dt=None):
         """Update trend data for specified scale from API.
         Optionally set a date to fetch data from."""
-        if scale.upper() not in valid_scales:
-            raise Exception("%s not a valid scale" % scale)
         if not dt:
-            dt = datetime.utcnow()
+            dt = datetime.now(timezone.utc)
         self._trend_data[scale] = self._api_call(
-            "app/history/trends?monitor_id=%s&scale=%s&start=%s"
-            % (self.sense_monitor_id, scale, dt.strftime("%Y-%m-%dT%H:%M:%S"))
+            f"app/history/trends?monitor_id={self.sense_monitor_id}&scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
         )
+        self._update_device_trends(scale)
 
     def update_trend_data(self, dt=None):
         """Update trend data of all scales from API.
         Optionally set a date to fetch data from."""
-        for scale in valid_scales:
+        for scale in Scale:
             self.get_trend_data(scale, dt)
 
     def get_monitor_data(self):
         """Get monitor overview info from API."""
-        json = self._api_call("app/monitors/%s/overview" % self.sense_monitor_id)
+        json = self._api_call(f"app/monitors/{self.sense_monitor_id}/overview")
         if "monitor_overview" in json and "monitor" in json["monitor_overview"]:
             self._monitor = json["monitor_overview"]["monitor"]
         return self._monitor
 
     def get_discovered_device_names(self):
         """Get list of device names from API."""
-        json = self._api_call("app/monitors/%s/devices" % self.sense_monitor_id)
+        json = self._api_call(f"app/monitors/{self.sense_monitor_id}/devices")
         self._devices = [entry["name"] for entry in json]
         return self._devices
 
     def get_discovered_device_data(self):
         """Get list of raw device data from API."""
-        return self._api_call("monitors/%s/devices" % self.sense_monitor_id)
+        return self._api_call(f"monitors/{self.sense_monitor_id}/devices")
 
     def always_on_info(self):
         """Always on info from API - pretty generic similar to the web page."""
-        return self._api_call("app/monitors/%s/devices/always_on" % self.sense_monitor_id)
+        return self._api_call(f"app/monitors/{self.sense_monitor_id}/devices/always_on")
 
     def get_monitor_info(self):
         """View info on monitor & device detection status from API."""
-        return self._api_call("app/monitors/%s/status" % self.sense_monitor_id)
+        return self._api_call(f"app/monitors/{self.sense_monitor_id}/status")
 
     def get_device_info(self, device_id):
         """Get specific informaton about a device from API."""
-        return self._api_call("app/monitors/%s/devices/%s" % (self.sense_monitor_id, device_id))
+        return self._api_call(f"app/monitors/{self.sense_monitor_id}/devices/{device_id}")
 
     def get_all_usage_data(self, payload={"n_items": 30}):
         """Gets usage data by device from API
@@ -254,4 +251,4 @@ class Senseable(SenseableBase):
             dict: usage data
         """
         # lots of info in here to be parsed out
-        return self._api_call("users/%s/timeline" % (self.sense_user_id), payload)
+        return self._api_call(f"users/{self.sense_user_id}/timeline", payload)

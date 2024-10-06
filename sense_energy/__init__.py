@@ -1,4 +1,4 @@
-from .sense_api import SenseableBase
+from .sense_api import SenseableBase, Scale
 from .sense_exceptions import *
 
 from .senseable import Senseable
