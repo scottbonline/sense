@@ -2,7 +2,7 @@
 
 import hashlib
 from time import time
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 from functools import lru_cache
 
 
@@ -65,7 +65,7 @@ class PlugInstance:
         else:
             self.mac = _generate_mac(self.device_id)
 
-    def generate_response(self) -> Dict[str, Dict[str, Any]]:
+    def generate_response(self) -> dict[str, dict[str, Any]]:
         """Generate a response dict for the plug."""
         # Response dict
         return {
