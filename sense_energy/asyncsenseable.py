@@ -267,7 +267,6 @@ class ASyncSenseable(SenseableBase):
         for devices in smart_plugs.values():
             device = {"tags": {"DateCreated": "2010-01-01T01:01:01.000Z"}}
             for d in devices:
-                print(f'{d["name"]=}, {d["id"]=}, {d["tags"].get("DateCreated", "")}, {device["tags"]["DateCreated"]}')
                 if d["tags"].get("DateCreated", "") > device["tags"]["DateCreated"]:
                     device = d
 
