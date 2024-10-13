@@ -5,7 +5,7 @@
 
 import asyncio
 import logging
-from typing import Iterator, Optional, Union
+from typing import Optional, Union
 
 import orjson
 from kasa_crypt import decrypt as tp_link_decrypt
@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 class SenseLinkServerProtocol:
     """Class to represent a SenseLink server."""
 
-    def __init__(self, devices: callable[[], Iterator[PlugInstance]]) -> None:
+    def __init__(self, devices: callable) -> None:
         """Initialize the SenseLink server."""
         self._devices = devices
         self.should_respond = True
@@ -90,7 +90,7 @@ class SenseLink:
 
     _devices = []
 
-    def __init__(self, devices: callable[[], Iterator[PlugInstance]], port=SENSE_TP_LINK_PORT) -> None:
+    def __init__(self, devices: callable, port=SENSE_TP_LINK_PORT) -> None:
         """Initialize the SenseLink server."""
         self.port = port
         self._devices = devices

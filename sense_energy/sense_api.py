@@ -27,10 +27,9 @@ class SenseDevice:
         self.icon = ""
         self.is_on = False
         self.power_w = 0.0
-        self.daily_kwh = 0.0
-        self.weekly_kwh = 0.0
-        self.monthly_kwh = 0.0
-        self.yearly_kwh = 0.0
+        self.energy_kwh = {}
+        for scale in Scale:
+            self.energy_kwh[scale] = 0.0
 
 
 class SenseableBase(object):
@@ -98,21 +97,22 @@ class SenseableBase(object):
     def _update_device_trends(self, scale: Scale):
         if not self._trend_data[scale]["consumption"].get("devices"):
             return
+        for d in self._devices.values():
+            d.energy_kwh[scale] = 0
         for d in self._trend_data[scale]["consumption"]["devices"]:
             id = d["id"]
             if id not in self._devices:
-                self._devices[id] = SenseDevice(id)
-                self._devices[id].icon = d["icon"]
+                # try to match device name and combine with newer device
+                for did in self._devices:
+                    if self._devices[did].name == d["name"]:
+                        id = did
+                        break
+                else:
+                    self._devices[id] = SenseDevice(id)
+                    self._devices[id].icon = d["icon"]
             if not self._devices[id].name:
                 self._devices[id].name = d["name"]
-            if scale == Scale.DAY:
-                self._devices[id].daily_kwh = d["total_kwh"]
-            elif scale == Scale.WEEK:
-                self._devices[id].weekly_kwh = d["total_kwh"]
-            elif scale == Scale.MONTH:
-                self._devices[id].monthly_kwh = d["total_kwh"]
-            elif scale == Scale.YEAR:
-                self._devices[id].yearly_kwh = d["total_kwh"]
+            self._devices[id].energy_kwh[scale] += d["total_kwh"]
 
     @property
     def devices(self) -> list[SenseDevice]:
