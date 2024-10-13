@@ -149,7 +149,7 @@ class SenseableBase(object):
         return self._realtime.get("solar_w", 0)
 
     @property
-    def active_voltage(self) -> float:
+    def active_voltage(self) -> list[float]:
         return self._realtime.get("voltage", [])
 
     @property
