@@ -287,6 +287,7 @@ class SenseableBase(object):
         return None
 
     def get_stat(self, scale: Scale, key: str) -> float:
+        key = "consumption" if key == "usage" else key
         if scale not in self._trend_data or key not in self._trend_data[scale]:
             return 0
         data = self._trend_data[scale][key]
