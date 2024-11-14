@@ -117,7 +117,7 @@ class ASyncSenseable(SenseableBase):
             data = await resp.json()
             self._set_auth_data(data)
             self.set_monitor_id(data["monitors"][0]["id"])
-            await self.fetch_discovered_devices()
+            await self.fetch_devices()
 
     async def renew_auth(self) -> None:
         """Renew the authentication token."""
@@ -278,12 +278,12 @@ class ASyncSenseable(SenseableBase):
 
     async def get_discovered_device_names(self) -> list[str]:
         """Outdated. Get list of device names from API.
-        Use fetch_discovered_devices and sense.devices instead."""
+        Use fetch_devices and sense.devices instead."""
         await self.fetch_devices()
         return [d.name for d in self._devices.values()]
 
     async def get_discovered_device_data(self):
         """Outdated. Get list of raw device data from API.
-        Use fetch_discovered_devices and sense.devices instead."""
+        Use fetch_devices and sense.devices instead."""
         json = self._api_call(f"monitors/{self.sense_monitor_id}/devices/overview")
         return await json["devices"]
