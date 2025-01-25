@@ -4,3 +4,4 @@ requests
 websocket-client
 websockets
 aiohttp
+kasa-crypt>=0.2.0
