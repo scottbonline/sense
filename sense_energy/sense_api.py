@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import ciso8601
 import uuid
@@ -55,9 +55,11 @@ class SenseableBase(object):
         self._realtime = {}
         self._devices: dict[str, SenseDevice] = {}
         self._trend_data: dict[Scale, dict] = {}
+        self._trend_data_updated: dict[Scale, datetime] = {}
         self._monitor = {}
         for scale in Scale:
             self._trend_data[scale] = {}
+            self._trend_data_updated[scale] = datetime(2000, 1, 1, tzinfo=timezone.utc)
         self.set_ssl_context(ssl_verify, ssl_cafile)
         if device_id:
             self.device_id = device_id
@@ -97,6 +99,10 @@ class SenseableBase(object):
     def _update_device_trends(self, scale: Scale):
         if not self._trend_data[scale]["consumption"].get("devices"):
             return
+        update = self.trend_update(scale)
+        if not update or update < self._trend_data_updated[scale]:
+            return
+
         for d in self._devices.values():
             d.energy_kwh[scale] = 0
         for d in self._trend_data[scale]["consumption"]["devices"]:
@@ -285,6 +291,17 @@ class SenseableBase(object):
         except ValueError:
             pass
         return None
+
+    def trend_update(self, scale: Scale) -> Optional[datetime]:
+        """Return an update value of trend last updated."""
+
+        update = self.trend_start(scale)
+        if not update:
+            return None
+        val = self._trend_data[scale]["from_grid"] / 100.0
+        seconds = int(val)
+        microseconds = int((val % 1) * 1000000)
+        return update + timedelta(seconds=seconds, microseconds=microseconds)
 
     def get_stat(self, scale: Scale, key: str) -> float:
         key = "consumption" if key == "usage" else key
