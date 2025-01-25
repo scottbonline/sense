@@ -55,10 +55,10 @@ class SenseLinkServerProtocol:
                 # Check for non-empty values, to prevent echo storms
                 if json_data["emeter"]["get_realtime"]:
                     # This is a self-echo, common with Docker without --net=Host!
-                    logging.debug("Ignoring non-empty/non-Sense UDP request")
+                    _LOGGER.debug("Ignoring non-empty/non-Sense UDP request")
                     return
 
-                logging.debug(f"Broadcast received from {addr}: {json_data}")
+                _LOGGER.debug(f"Broadcast received from {addr}: {json_data}")
 
                 # Build and send responses
                 for plug in self._devices():
@@ -72,7 +72,7 @@ class SenseLinkServerProtocol:
                     # Allow disabling response
                     if self.should_respond:
                         # Send response
-                        logging.debug("Sending response: %s", response)
+                        _LOGGER.debug("Sending response: %s", response)
                         self.transport.sendto(encrypted_resp, addr)
                     else:
                         # Do not send response, but log for debugging
