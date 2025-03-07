@@ -298,7 +298,7 @@ class SenseableBase(object):
         update = self.trend_start(scale)
         if not update:
             return None
-        if scale not in self._trend_data or "from_grid" not in self._trend_data[scale]:
+        if scale not in self._trend_data or not self._trend_data[scale].get("from_grid"):
             return None
         val = self._trend_data[scale]["from_grid"] / 100.0
         seconds = int(val)
