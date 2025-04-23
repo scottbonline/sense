@@ -186,10 +186,10 @@ class ASyncSenseable(SenseableBase):
                     if single:
                         return
                 elif result.get("type") == "error":
-                    data = result["payload"]
-                    if not data["authorized"]:
+                    data = result.get("payload")
+                    if not data or data.get("authorized"):
                         raise SenseAuthenticationException("Web Socket Unauthorized")
-                    raise SenseWebsocketException(data["error_reason"])
+                    raise SenseWebsocketException(data.get("error_reason", "Error"))
 
     async def get_realtime_future(self, callback: callable) -> None:
         """Returns an async Future to parse realtime data with callback"""
