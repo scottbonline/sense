@@ -99,9 +99,10 @@ class SenseableBase(object):
     def _update_device_trends(self, scale: Scale):
         if not self._trend_data[scale]["consumption"].get("devices"):
             return
-        update = self.trend_update(scale)
-        if not update or update < self._trend_data_updated[scale]:
-            return
+        if update := self.trend_update(scale)
+            if update < self._trend_data_updated[scale]:
+                return
+            self._trend_data_updated[scale] = update
 
         for d in self._devices.values():
             d.energy_kwh[scale] = 0
