@@ -99,7 +99,7 @@ class SenseableBase(object):
     def _update_device_trends(self, scale: Scale):
         if not self._trend_data[scale]["consumption"].get("devices"):
             return
-        if update := self.trend_update(scale)
+        if update := self.trend_update(scale):
             if update < self._trend_data_updated[scale]:
                 return
             self._trend_data_updated[scale] = update
@@ -297,11 +297,12 @@ class SenseableBase(object):
         """Return an update value of trend last updated."""
 
         update = self.trend_start(scale)
-        if not update:
+        if not update or scale not in self._trend_data:
             return None
-        if scale not in self._trend_data or not self._trend_data[scale].get("from_grid"):
-            return None
-        val = self._trend_data[scale]["from_grid"] / 100.0
+        val = self._trend_data[scale]["from_grid"]
+        if val is None:
+            val = self._trend_data[scale]["consumption"]["total"]
+        val /= 100.0
         seconds = int(val)
         microseconds = int((val % 1) * 1000000)
         return update + timedelta(seconds=seconds, microseconds=microseconds)
