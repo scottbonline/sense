@@ -155,7 +155,11 @@ class ASyncSenseable(SenseableBase):
             return self._realtime
         self.last_realtime_call = now
         try:
-            await self.async_realtime_stream(single=True)
+            if await self.supports_realtime_update_api():
+                data = await self.get_realtime_update()
+                self._set_realtime(data)
+            else:
+                await self.async_realtime_stream(single=True)
         except SenseAuthenticationException as e:
             if retry:
                 await self.renew_auth()
@@ -243,6 +247,10 @@ class ASyncSenseable(SenseableBase):
             self._monitor = json["monitor_overview"]["monitor"]
         return self._monitor
 
+    async def get_monitor_info(self):
+        """View info on monitor & device detection status from API."""
+        return await self._api_call(f"app/monitors/{self.sense_monitor_id}/status")
+
     async def fetch_devices(self) -> None:
         """Fetch discovered devices from API."""
         json = await self._api_call(f"app/monitors/{self.sense_monitor_id}/devices/overview")
@@ -287,3 +295,25 @@ class ASyncSenseable(SenseableBase):
         Use fetch_devices and sense.devices instead."""
         json = self._api_call(f"monitors/{self.sense_monitor_id}/devices/overview")
         return await json["devices"]
+
+    async def get_realtime_update(self):
+        """Get a realtime update for a device from API."""
+        return await self._api_call(f"app/{self.sense_monitor_id}/realtime_update")
+
+    async def get_sw_version(self):
+        """Get the currently installed software version on a device from API."""
+        now = time()
+        if not self._sw_version or now > self.last_sw_version_check + SW_VERSION_CHECK_INTERVAL:
+            data = await self.get_monitor_info()
+            self._sw_version = data["monitor_info"]["version"]
+            self.last_sw_version_check = now
+        return self._sw_version
+
+    async def supports_realtime_update_api(self) -> bool:
+        """Returns whether a device supports the /app/<monitor_id>/realtime_update API."""
+        await self.get_sw_version()
+
+        if self._sw_version and self._sw_version >= MIN_VERSION_REALTIME_UPDATE_API:
+            return True
+        else:
+            return False

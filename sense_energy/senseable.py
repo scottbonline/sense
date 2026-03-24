@@ -137,7 +137,11 @@ class Senseable(SenseableBase):
             return self._realtime
         self.last_realtime_call = now
         try:
-            next(self.get_realtime_stream())
+            if self.supports_realtime_update_api():
+                data = self.get_realtime_update()
+                self._set_realtime(data)
+            else:
+                next(self.get_realtime_stream())
         except SenseAuthenticationException as e:
             if retry:
                 self.renew_auth()
@@ -252,3 +256,25 @@ class Senseable(SenseableBase):
         """
         # lots of info in here to be parsed out
         return self._api_call(f"users/{self.sense_user_id}/timeline", payload)
+
+    def get_realtime_update(self):
+        """Get a realtime update for a device from API."""
+        return self._api_call(f"app/{self.sense_monitor_id}/realtime_update")
+
+    def get_sw_version(self):
+        """Get the currently installed software version on a device from API."""
+        now = time()
+        if not self._sw_version or now > self.last_sw_version_check + SW_VERSION_CHECK_INTERVAL:
+            data = self.get_monitor_info()
+            self._sw_version = data["monitor_info"]["version"]
+            self.last_sw_version_check = now
+        return self._sw_version
+
+    def supports_realtime_update_api(self) -> bool:
+        """Returns whether a device supports the /app/<monitor_id>/realtime_update API."""
+        self.get_sw_version()
+
+        if self._sw_version and self._sw_version >= MIN_VERSION_REALTIME_UPDATE_API:
+            return True
+        else:
+            return False

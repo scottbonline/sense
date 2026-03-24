@@ -11,6 +11,9 @@ API_TIMEOUT = 5
 WSS_TIMEOUT = 5
 RATE_LIMIT = 60
 
+MIN_VERSION_REALTIME_UPDATE_API = "1.64"
+SW_VERSION_CHECK_INTERVAL = 86400 # 1 day
+
 
 class Scale(Enum):
     DAY = auto()
@@ -70,6 +73,8 @@ class SenseableBase(object):
 
         if username and password:
             self.authenticate(username, password)
+
+        self._sw_version = ""
 
     def load_auth(self, access_token: str, user_id: str, device_id: str, refresh_token: str):
         """Load the authentication data from a previous session."""
