@@ -272,9 +272,11 @@ class Senseable(SenseableBase):
 
     def supports_realtime_update_api(self) -> bool:
         """Returns whether a device supports the /app/<monitor_id>/realtime_update API."""
-        self.get_sw_version()
 
-        if self._sw_version and self._sw_version >= MIN_VERSION_REALTIME_UPDATE_API:
+        # Assume that software version will not downgrade; if set, don't check again
+        if self._sw_version >= MIN_VERSION_REALTIME_UPDATE_API:
             return True
         else:
-            return False
+            self.get_sw_version()
+
+            return self._sw_version >= MIN_VERSION_REALTIME_UPDATE_API
