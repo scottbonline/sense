@@ -227,11 +227,26 @@ class ASyncSenseable(SenseableBase):
         Optionally set a date to fetch data from."""
         if not dt:
             dt = datetime.now(timezone.utc)
-        json = self._api_call(
-            f"app/history/trends?monitor_id={self.sense_monitor_id}"
-            + f"&device_id=always_on&scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+        
+        # Ensure monitor data is available to check solar configuration
+        if not self._monitor:
+            await self.get_monitor_data()
+        
+        usage_data = await self._api_call(
+            f"app/monitors/{self.sense_monitor_id}/history/usage"
+            + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
         )
-        self._trend_data[scale] = await json
+        
+        # Get solar data if solar is configured
+        solar_data = None
+        if self._monitor.get("solar_configured"):
+            solar_data = await self._api_call(
+                f"app/monitors/{self.sense_monitor_id}/history/usage/solar"
+                + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
+        
+        # Transform to legacy format for backward compatibility
+        self._trend_data[scale] = self._transform_usage_response(usage_data, solar_data)
         self._update_device_trends(scale)
 
     async def update_trend_data(self, dt: datetime = None) -> None:
