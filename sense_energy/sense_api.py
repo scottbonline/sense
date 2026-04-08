@@ -101,8 +101,54 @@ class SenseableBase(object):
             "Authorization": "bearer {}".format(self.sense_access_token),
         }
 
+    @staticmethod
+    def _transform_usage_response(usage_data: dict, solar_data: dict = None) -> dict:
+        """Transform new API response format to legacy format."""
+        legacy_format = {
+            "start": usage_data.get("start"),
+            "consumption": {
+                "total": usage_data.get("consumption", {}).get("usage_total_kwh", 0),
+                "devices": [
+                    {
+                        "id": d["id"],
+                        "name": d["name"],
+                        "icon": d["icon"],
+                        "total_kwh": d.get("consumption", {}).get("usage_total_kwh", 0)
+                    }
+                    for d in usage_data.get("device_breakdown", [])
+                ]
+            }
+        }
+        
+        if solar_data and "total" in solar_data:
+            solar_total = solar_data["total"]
+            legacy_format["from_grid"] = solar_total.get("from_grid_kwh")
+            legacy_format["to_grid"] = solar_total.get("to_grid_kwh")
+            legacy_format["production"] = {
+                "total": solar_total.get("production_kwh", 0)
+            }
+            legacy_format["solar_powered"] = solar_total.get("solar_percentage")
+            legacy_format["net_production"] = solar_total.get("net_kwh")
+            
+            consumption_total = legacy_format["consumption"]["total"]
+            production_total = solar_total.get("production_kwh", 0)
+            if consumption_total > 0:
+                legacy_format["production_pct"] = round(production_total / consumption_total * 100)
+            else:
+                legacy_format["production_pct"] = 100 if production_total > 0 else 0
+        else:
+            legacy_format["from_grid"] = None
+            legacy_format["to_grid"] = None
+            legacy_format["production"] = {"total": 0}
+            legacy_format["solar_powered"] = None
+            legacy_format["net_production"] = None
+            legacy_format["production_pct"] = None
+        
+        return legacy_format
+
     def _update_device_trends(self, scale: Scale):
-        if not self._trend_data[scale]["consumption"].get("devices"):
+        consumption = self._trend_data[scale].get("consumption", {})
+        if not consumption.get("devices"):
             return
         if update := self.trend_update(scale):
             if update < self._trend_data_updated[scale]:

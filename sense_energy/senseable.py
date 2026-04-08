@@ -199,9 +199,26 @@ class Senseable(SenseableBase):
         Optionally set a date to fetch data from."""
         if not dt:
             dt = datetime.now(timezone.utc)
-        self._trend_data[scale] = self._api_call(
-            f"app/history/trends?monitor_id={self.sense_monitor_id}&scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+        
+        # Ensure monitor data is available to check solar configuration
+        if not self._monitor:
+            self.get_monitor_data()
+        
+        usage_data = self._api_call(
+            f"app/monitors/{self.sense_monitor_id}/history/usage"
+            + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
         )
+        
+        # Get solar data if solar is configured
+        solar_data = None
+        if self._monitor.get("solar_configured"):
+            solar_data = self._api_call(
+                f"app/monitors/{self.sense_monitor_id}/history/usage/solar"
+                + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+            )
+        
+        # Transform to legacy format for backward compatibility
+        self._trend_data[scale] = self._transform_usage_response(usage_data, solar_data)
         self._update_device_trends(scale)
 
     def update_trend_data(self, dt=None):
