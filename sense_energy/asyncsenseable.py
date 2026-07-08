@@ -99,7 +99,7 @@ class ASyncSenseable(SenseableBase):
         mfa_data = {
             "totp": code,
             "mfa_token": self._mfa_token,
-            "client_time:": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "client_time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
         # Get auth token
