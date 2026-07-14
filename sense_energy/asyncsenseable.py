@@ -6,7 +6,7 @@ from time import time
 from datetime import timezone
 
 import aiohttp
-import orjson
+import msgpack
 import websockets
 
 from .sense_api import *
@@ -173,7 +173,11 @@ class ASyncSenseable(SenseableBase):
         """
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         # hello, features, [updates,] data
-        async with websockets.connect(url, ssl=self.ssl_context) as ws:
+        async with websockets.connect(
+            url, ssl=self.ssl_context, additional_headers={"Accept": "application/x-msgpack"}
+        ) as ws:
+            unpacker = msgpack.Unpacker(raw=False)
+            pending = []
             while True:
                 try:
                     async with asyncio_timeout(self.wss_timeout):
@@ -181,19 +185,26 @@ class ASyncSenseable(SenseableBase):
                 except asyncio.TimeoutError as ex:
                     raise SenseAPITimeoutException("API websocket timed out") from ex
 
-                result = orjson.loads(message)
-                if result.get("type") == "realtime_update":
-                    data = result["payload"]
-                    self._set_realtime(data)
-                    if callback:
-                        callback(data)
-                    if single:
-                        return
-                elif result.get("type") == "error":
-                    data = result.get("payload")
-                    if not data or data.get("authorized"):
-                        raise SenseAuthenticationException("Web Socket Unauthorized")
-                    raise SenseWebsocketException(data.get("error_reason", "Error"))
+                # msgpack messages are three concatenated objects: type, epoch, payload
+                unpacker.feed(message)
+                pending.extend(unpacker)
+                results = []
+                while len(pending) >= 3:
+                    results.append({"type": pending[0], "epoch": pending[1], "payload": pending[2]})
+                    del pending[:3]
+                for result in results:
+                    if result.get("type") == "realtime_update":
+                        data = result["payload"]
+                        self._set_realtime(data)
+                        if callback:
+                            callback(data)
+                        if single:
+                            return
+                    elif result.get("type") == "error":
+                        data = result.get("payload")
+                        if not data or data.get("authorized"):
+                            raise SenseAuthenticationException("Web Socket Unauthorized")
+                        raise SenseWebsocketException(data.get("error_reason", "Error"))
 
     async def get_realtime_future(self, callback: callable) -> None:
         """Returns an async Future to parse realtime data with callback"""
