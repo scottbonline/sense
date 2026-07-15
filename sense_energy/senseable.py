@@ -1,8 +1,8 @@
-import json
 import ssl
 from datetime import timezone
 from time import time
 
+import msgpack
 import requests
 from requests.exceptions import ReadTimeout
 from websocket import create_connection
@@ -155,18 +155,32 @@ class Senseable(SenseableBase):
         ws = 0
         url = WS_URL % (self.sense_monitor_id, self.sense_access_token)
         try:
-            ws = create_connection(url, timeout=self.wss_timeout, sslopt={"cert_reqs": ssl.CERT_NONE})
+            ws = create_connection(
+                url,
+                timeout=self.wss_timeout,
+                sslopt={"cert_reqs": ssl.CERT_NONE},
+                header={"Accept": "application/x-msgpack"},
+            )
+            unpacker = msgpack.Unpacker(raw=False)
+            pending = []
             while True:  # hello, features, [updates,] data
-                result = json.loads(ws.recv())
-                if result.get("type") == "realtime_update":
-                    data = result["payload"]
-                    self._set_realtime(data)
-                    yield data
-                elif result.get("type") == "error":
-                    data = result["payload"]
-                    if not data["authorized"]:
-                        raise SenseAuthenticationException("Web Socket Unauthorized")
-                    raise SenseWebsocketException(data["error_reason"])
+                # msgpack messages are three concatenated objects: type, epoch, payload
+                unpacker.feed(ws.recv())
+                pending.extend(unpacker)
+                results = []
+                while len(pending) >= 3:
+                    results.append({"type": pending[0], "epoch": pending[1], "payload": pending[2]})
+                    del pending[:3]
+                for result in results:
+                    if result.get("type") == "realtime_update":
+                        data = result["payload"]
+                        self._set_realtime(data)
+                        yield data
+                    elif result.get("type") == "error":
+                        data = result["payload"]
+                        if not data["authorized"]:
+                            raise SenseAuthenticationException("Web Socket Unauthorized")
+                        raise SenseWebsocketException(data["error_reason"])
         except WebSocketTimeoutException:
             raise SenseAPITimeoutException("API websocket timed out")
         finally:
