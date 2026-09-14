@@ -61,6 +61,14 @@ class ASyncSenseable(SenseableBase):
         """Create or set the SSL context. Use custom ssl verification, if specified."""
         self.ssl_context = get_ssl_context(ssl_verify, ssl_cafile)
 
+    @staticmethod
+    async def _error_body(resp):
+        """Return the parsed JSON body of an error response, or None if it can't be parsed."""
+        try:
+            return await resp.json(content_type=None)
+        except Exception:
+            return None
+
     async def authenticate(self, username: str, password: str, ssl_verify: bool = True, ssl_cafile: str = "") -> None:
         """Authenticate with username (email) and password. Optionally set SSL context as well.
         This or `load_auth` must be called once at the start of the session."""
@@ -76,15 +84,18 @@ class ASyncSenseable(SenseableBase):
         ) as resp:
             # check MFA code required
             if resp.status == 401:
-                data = await resp.json()
-                if "mfa_token" in data:
+                data = await self._error_body(resp)
+                if isinstance(data, dict) and "mfa_token" in data:
                     self._mfa_token = data["mfa_token"]
-                    raise SenseMFARequiredException(data["error_reason"])
+                    raise SenseMFARequiredException(data.get("error_reason", ""))
 
             # check for 200 return
             if resp.status != 200:
                 raise SenseAuthenticationException(
-                    f"Please check username and password. API Return Code: {resp.status}"
+                    self._auth_error_message(
+                        f"Please check username and password. API Return Code: {resp.status}",
+                        await self._error_body(resp),
+                    )
                 )
 
             # Build out some common variables
@@ -111,7 +122,9 @@ class ASyncSenseable(SenseableBase):
         ) as resp:
             # check for 200 return
             if resp.status != 200:
-                raise SenseAuthenticationException(f"API Return Code: {resp.status}")
+                raise SenseAuthenticationException(
+                    self._auth_error_message(f"API Return Code: {resp.status}", await self._error_body(resp))
+                )
 
             # Build out some common variables
             data = await resp.json()
@@ -135,7 +148,9 @@ class ASyncSenseable(SenseableBase):
         ) as resp:
             # check for 200 return
             if resp.status != 200:
-                raise SenseAuthenticationException(f"API Return Code: {resp.status}")
+                raise SenseAuthenticationException(
+                    self._auth_error_message(f"API Return Code: {resp.status}", await self._error_body(resp))
+                )
 
             self._set_auth_data(await resp.json())
 
@@ -236,16 +251,14 @@ class ASyncSenseable(SenseableBase):
     async def get_trend_data(self, scale: Scale, dt: datetime = None) -> None:
         """Update trend data for specified scale from API.
         Optionally set a date to fetch data from."""
-        if not dt:
-            dt = datetime.now(timezone.utc)
-        
-        # Ensure monitor data is available to check solar configuration
+        # Ensure monitor data is available to check solar configuration and time zone
         if not self._monitor:
             await self.get_monitor_data()
+        start = self._trend_start_param(dt)
         
         usage_data = await self._api_call(
             f"app/monitors/{self.sense_monitor_id}/history/usage"
-            + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+            + f"?scale={scale.name}&start={start}"
         )
         
         # Get solar data if solar is configured
@@ -253,7 +266,7 @@ class ASyncSenseable(SenseableBase):
         if self._monitor.get("solar_configured"):
             solar_data = await self._api_call(
                 f"app/monitors/{self.sense_monitor_id}/history/usage/solar"
-                + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+                + f"?scale={scale.name}&start={start}"
             )
         
         # Transform to legacy format for backward compatibility
