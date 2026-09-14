@@ -228,14 +228,16 @@ class Senseable(SenseableBase):
     def get_trend_data(self, scale: Scale, dt=None):
         """Update trend data for specified scale from API.
         Optionally set a date to fetch data from."""
-        # Ensure monitor data is available to check solar configuration and time zone
+        if not dt:
+            dt = datetime.now(timezone.utc)
+        
+        # Ensure monitor data is available to check solar configuration
         if not self._monitor:
             self.get_monitor_data()
-        start = self._trend_start_param(dt)
         
         usage_data = self._api_call(
             f"app/monitors/{self.sense_monitor_id}/history/usage"
-            + f"?scale={scale.name}&start={start}"
+            + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
         )
         
         # Get solar data if solar is configured
@@ -243,7 +245,7 @@ class Senseable(SenseableBase):
         if self._monitor.get("solar_configured"):
             solar_data = self._api_call(
                 f"app/monitors/{self.sense_monitor_id}/history/usage/solar"
-                + f"?scale={scale.name}&start={start}"
+                + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
             )
         
         # Transform to legacy format for backward compatibility

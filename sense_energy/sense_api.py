@@ -1,7 +1,6 @@
 from enum import Enum, auto
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from zoneinfo import ZoneInfo
 import ciso8601
 import uuid
 from .sense_exceptions import *
@@ -334,19 +333,6 @@ class SenseableBase(object):
     @property
     def time_zone(self) -> str:
         return self._monitor.get("time_zone", "")
-
-    def _trend_start_param(self, dt: datetime = None) -> str:
-        """Format the trend `start` query value in the monitor's local time zone.
-        Naive datetimes are assumed to already be monitor-local wall time."""
-        try:
-            zone = ZoneInfo(self.time_zone) if self.time_zone else timezone.utc
-        except Exception:
-            zone = timezone.utc
-        if dt is None:
-            dt = datetime.now(zone)
-        elif dt.tzinfo is not None:
-            dt = dt.astimezone(zone)
-        return dt.strftime("%Y-%m-%dT%H:%M:%S")
 
     @staticmethod
     def _auth_error_message(message: str, data) -> str:
