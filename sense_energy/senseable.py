@@ -235,9 +235,13 @@ class Senseable(SenseableBase):
         if not self._monitor:
             self.get_monitor_data()
         
+        # history/usage takes only the period scales, so an hour is read out of
+        # the breakdown in its day's response.
+        fetch = Scale.DAY if scale == Scale.HOUR else scale
+        start = self._format_trend_start(dt)
         usage_data = self._api_call(
             f"app/monitors/{self.sense_monitor_id}/history/usage"
-            + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+            + f"?scale={fetch.name}&start={start}"
         )
         
         # Get solar data if solar is configured
@@ -245,17 +249,23 @@ class Senseable(SenseableBase):
         if self._monitor.get("solar_configured"):
             solar_data = self._api_call(
                 f"app/monitors/{self.sense_monitor_id}/history/usage/solar"
-                + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+                + f"?scale={fetch.name}&start={start}"
             )
         
         # Transform to legacy format for backward compatibility
-        self._trend_data[scale] = self._transform_usage_response(usage_data, solar_data)
+        if scale == Scale.HOUR:
+            hour = self._transform_hour_response(dt, usage_data, solar_data)
+            if hour is None:
+                return
+            self._trend_data[scale] = hour
+        else:
+            self._trend_data[scale] = self._transform_usage_response(usage_data, solar_data)
         self._update_device_trends(scale)
 
     def update_trend_data(self, dt=None):
         """Update trend data of all scales from API.
         Optionally set a date to fetch data from."""
-        for scale in Scale:
+        for scale in TREND_SCALES:
             self.get_trend_data(scale, dt)
 
     def get_monitor_data(self):

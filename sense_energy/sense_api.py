@@ -21,6 +21,16 @@ class Scale(Enum):
     MONTH = auto()
     YEAR = auto()
     CYCLE = auto()
+    # New members must be appended. Scale uses auto(), so inserting a member
+    # ahead of an existing one renumbers it and breaks consumers that persisted
+    # the integer values.
+    HOUR = auto()
+
+
+# The period scales fetched by update_trend_data(). Scale.HOUR is deliberately
+# excluded: it describes a single clock hour and is only meaningful when the
+# caller asks for a specific, already-completed hour via get_trend_data().
+TREND_SCALES = (Scale.DAY, Scale.WEEK, Scale.MONTH, Scale.YEAR, Scale.CYCLE)
 
 
 class SenseDevice:
@@ -145,6 +155,108 @@ class SenseableBase(object):
             legacy_format["production_pct"] = None
         
         return legacy_format
+
+    def _format_trend_start(self, dt: datetime) -> str:
+        """Format a datetime for the API's `start` parameter, which reads as UTC.
+
+        Naive datetimes are sent verbatim, since their intended zone is unknowable.
+        """
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(timezone.utc)
+        return dt.strftime("%Y-%m-%dT%H:%M:%S")
+
+    @staticmethod
+    def _at(values, index: int) -> float:
+        """Return values[index], or 0.0 if it is missing or not a number."""
+        if isinstance(values, list) and 0 <= index < len(values):
+            if isinstance(values[index], (int, float)):
+                return values[index]
+        return 0.0
+
+    @staticmethod
+    def _rescale(value: float, derived_total: float, actual_total) -> float:
+        """Scale a derived hourly value so the day's hours sum to actual_total."""
+        if not value or not derived_total or actual_total is None:
+            return value
+        return value * (actual_total / derived_total)
+
+    def _transform_hour_response(
+        self, dt: datetime, usage_data: dict, solar_data: dict = None
+    ) -> Optional[dict]:
+        """Build one clock hour from a DAY response's per-hour breakdown arrays.
+
+        The arrays hold one entry per clock hour of the monitor's local day and
+        are sized by the API across DST (23 on spring-forward, 25 on fall-back),
+        so the hour is found by counting whole hours from the response's own
+        `start` rather than assuming 24. Returns None when the day fetched does
+        not cover dt, leaving any previously stored hour alone.
+        """
+        try:
+            day_start = ciso8601.parse_datetime(usage_data.get("start", ""))
+        except (ValueError, TypeError):
+            return None
+        totals = usage_data.get("consumption", {}).get("usage_breakdown_kwh")
+        if not isinstance(totals, list):
+            return None
+        index = int((dt - day_start).total_seconds() // 3600)
+        if not 0 <= index < len(totals):
+            return None
+
+        consumption = self._at(totals, index)
+        hour = {
+            "start": (day_start + timedelta(hours=index)).isoformat(),
+            "consumption": {"usage_total_kwh": consumption},
+            "device_breakdown": [
+                {
+                    "id": d["id"],
+                    "name": d["name"],
+                    "icon": d["icon"],
+                    "consumption": {
+                        "usage_total_kwh": self._at(
+                            d.get("consumption", {}).get("usage_breakdown_kwh"), index
+                        )
+                    },
+                }
+                for d in usage_data.get("device_breakdown", [])
+            ],
+        }
+
+        breakdown = (solar_data or {}).get("breakdown")
+        if not isinstance(breakdown, dict):
+            return self._transform_usage_response(hour)
+
+        # from_grid/to_grid have no hourly form, so derive them from the hourly
+        # net and rescale to the exact daily totals the API does report.
+        nets = breakdown.get("net_kwh")
+        nets = nets if isinstance(nets, list) else []
+        net = self._at(nets, index)
+        production = self._at(breakdown.get("production_kwh"), index)
+        day_total = solar_data.get("total", {})
+        to_grid = self._rescale(
+            max(0.0, net),
+            sum(v for v in nets if isinstance(v, (int, float)) and v > 0),
+            day_total.get("to_grid_kwh"),
+        )
+        from_grid = self._rescale(
+            max(0.0, -net),
+            sum(-v for v in nets if isinstance(v, (int, float)) and v < 0),
+            day_total.get("from_grid_kwh"),
+        )
+        solar_to_home = min(max(0.0, production - to_grid), consumption)
+        return self._transform_usage_response(
+            hour,
+            {
+                "total": {
+                    "from_grid_kwh": from_grid,
+                    "to_grid_kwh": to_grid,
+                    "production_kwh": production,
+                    "net_kwh": net,
+                    "solar_percentage": (
+                        round(solar_to_home / consumption * 100) if consumption else 0
+                    ),
+                }
+            },
+        )
 
     def _update_device_trends(self, scale: Scale):
         consumption = self._trend_data[scale].get("consumption", {})
