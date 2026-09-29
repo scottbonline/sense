@@ -29,7 +29,7 @@ class Scale(Enum):
 
 # The period scales fetched by update_trend_data(). Scale.HOUR is deliberately
 # excluded: it describes a single clock hour and is only meaningful when the
-# caller asks for a specific, already-completed hour via get_trend_data().
+# caller asks for a specific hour via get_trend_data().
 TREND_SCALES = (Scale.DAY, Scale.WEEK, Scale.MONTH, Scale.YEAR, Scale.CYCLE)
 
 
@@ -262,10 +262,11 @@ class SenseableBase(object):
         consumption = self._trend_data[scale].get("consumption", {})
         if not consumption.get("devices"):
             return
-        if update := self.trend_update(scale):
-            if update < self._trend_data_updated[scale]:
-                return
-            self._trend_data_updated[scale] = update
+        if scale != Scale.HOUR:
+            if update := self.trend_update(scale):
+                if update < self._trend_data_updated[scale]:
+                    return
+                self._trend_data_updated[scale] = update
 
         for d in self._devices.values():
             d.energy_kwh[scale] = 0

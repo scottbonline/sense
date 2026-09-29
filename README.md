@@ -59,7 +59,7 @@ and `get_realtime()` will retrieve the latest real time stats.
 
 `update_trend_data()` covers the period scales in `TREND_SCALES` (`Scale.DAY`,
 `Scale.WEEK`, `Scale.MONTH`, `Scale.YEAR`, `Scale.CYCLE`). `Scale.HOUR` is not one of
-them — fetch a single completed hour explicitly:
+them — fetch any single hour explicitly:
 
 ```python
     from datetime import datetime, timedelta, timezone
@@ -77,6 +77,17 @@ Each call replaces the stored hour, and `trend_start(Scale.HOUR)` says which hou
 describes — check it, since a request outside the day returned leaves the previous hour
 in place. Usage, per-device energy and production are exact; `from_grid` and `to_grid` are
 approximated from the hourly net, rescaled so the day matches the API's exact totals.
+Hours may be fetched in any order, not just ascending/completed ones.
+
+You can also fetch the current, in-progress hour — its values are partial and to-date,
+growing until the hour ends:
+
+```python
+    sense.get_trend_data(Scale.HOUR, datetime.now(timezone.utc))
+```
+
+Check whether the stored hour is still in progress with
+`sense.trend_start(Scale.HOUR) + timedelta(hours=1) > datetime.now(timezone.utc)`.
 
 `start` is read by the API as UTC. Offset-aware datetimes are converted; naive ones are
 sent as given.
