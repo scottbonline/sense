@@ -47,6 +47,14 @@ class Senseable(SenseableBase):
         elif ssl_cafile:
             self.s.verify = ssl_cafile
 
+    @staticmethod
+    def _error_body(resp):
+        """Return the parsed JSON body of an error response, or None if it can't be parsed."""
+        try:
+            return resp.json()
+        except Exception:
+            return None
+
     def authenticate(self, username, password, ssl_verify=True, ssl_cafile=""):
         """Authenticate with username (email) and password. Optionally set SSL context as well.
         This or `load_auth` must be called once at the start of the session."""
@@ -60,15 +68,18 @@ class Senseable(SenseableBase):
 
         # check MFA code required
         if resp.status_code == 401:
-            data = resp.json()
-            if "mfa_token" in data:
+            data = self._error_body(resp)
+            if isinstance(data, dict) and "mfa_token" in data:
                 self._mfa_token = data["mfa_token"]
-                raise SenseMFARequiredException(data["error_reason"])
+                raise SenseMFARequiredException(data.get("error_reason", ""))
 
         # check for 200 return
         if resp.status_code != 200:
             raise SenseAuthenticationException(
-                f"Please check username and password. API Return Code: {resp.status_code}"
+                self._auth_error_message(
+                    f"Please check username and password. API Return Code: {resp.status_code}",
+                    self._error_body(resp),
+                )
             )
 
         data = resp.json()
@@ -92,7 +103,10 @@ class Senseable(SenseableBase):
         # check for 200 return
         if resp.status_code != 200:
             raise SenseAuthenticationException(
-                f"Please check username and password. API Return Code: {resp.status_code}"
+                self._auth_error_message(
+                    f"Please check username and password. API Return Code: {resp.status_code}",
+                    self._error_body(resp),
+                )
             )
 
         data = resp.json()
@@ -114,7 +128,10 @@ class Senseable(SenseableBase):
         # check for 200 return
         if resp.status_code != 200:
             raise SenseAuthenticationException(
-                f"Please check username and password. API Return Code: {resp.status_code}"
+                self._auth_error_message(
+                    f"Please check username and password. API Return Code: {resp.status_code}",
+                    self._error_body(resp),
+                )
             )
 
         self._set_auth_data(resp.json())
@@ -218,9 +235,13 @@ class Senseable(SenseableBase):
         if not self._monitor:
             self.get_monitor_data()
         
+        # history/usage takes only the period scales, so an hour is read out of
+        # the breakdown in its day's response.
+        fetch = Scale.DAY if scale == Scale.HOUR else scale
+        start = self._format_trend_start(dt)
         usage_data = self._api_call(
             f"app/monitors/{self.sense_monitor_id}/history/usage"
-            + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+            + f"?scale={fetch.name}&start={start}"
         )
         
         # Get solar data if solar is configured
@@ -228,17 +249,23 @@ class Senseable(SenseableBase):
         if self._monitor.get("solar_configured"):
             solar_data = self._api_call(
                 f"app/monitors/{self.sense_monitor_id}/history/usage/solar"
-                + f"?scale={scale.name}&start={dt.strftime('%Y-%m-%dT%H:%M:%S')}"
+                + f"?scale={fetch.name}&start={start}"
             )
         
         # Transform to legacy format for backward compatibility
-        self._trend_data[scale] = self._transform_usage_response(usage_data, solar_data)
+        if scale == Scale.HOUR:
+            hour = self._transform_hour_response(dt, usage_data, solar_data)
+            if hour is None:
+                return
+            self._trend_data[scale] = hour
+        else:
+            self._trend_data[scale] = self._transform_usage_response(usage_data, solar_data)
         self._update_device_trends(scale)
 
     def update_trend_data(self, dt=None):
         """Update trend data of all scales from API.
         Optionally set a date to fetch data from."""
-        for scale in Scale:
+        for scale in TREND_SCALES:
             self.get_trend_data(scale, dt)
 
     def get_monitor_data(self):
